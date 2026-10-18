@@ -3,19 +3,10 @@ const $ = id => document.getElementById(id);
 const view = window.MoriView;
 let state, hideTimer, showTimer, pinned = false, dragging = false, startPoint, moved = false, interactive = null;
 const api = window.mori;
-function fitPanel() {
-  if (!state) return;
-  const offset = state.settings.avatar === 'original' ? 264 : 294;
-  const requested = state.settings.scale;
-  const visible = $('popover').hidden ? requested : Math.max(0.4, Math.min(requested, (window.innerHeight - 410) / offset));
-  document.documentElement.style.setProperty('--visible-scale', visible);
-}
-function setOpen(open) { $('popover').hidden = !open; fitPanel(); }
-window.addEventListener('resize', fitPanel);
+function setOpen(open) { $('popover').hidden = !open; }
 function render(next) {
   state = next;
   view.applyAppearance(next);
-  fitPanel();
   document.documentElement.style.setProperty('--scale', next.settings.scale);
   document.body.classList.toggle('reduced', next.settings.reduceMotion);
   $('today-tokens').textContent = view.number(next.usage.todayTokens);

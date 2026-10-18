@@ -16,8 +16,10 @@ jobs:
       - name: Verify official Codex read-only protocol
         run: npm exec --yes --package=@openai/codex@0.163.0 -- node scripts/verify-official-codex.cjs
       - run: npx playwright-core install chromium
-      - run: npm run test:ui
-      - run: npm run test:desktop
+      - name: Run npm run test:ui
+        run: node scripts/ci-check.cjs --test tests/ui.test.cjs
+      - name: Run npm run test:desktop
+        run: node scripts/ci-check.cjs tests/desktop-smoke.cjs
       - name: Validate Windows observation script
         shell: pwsh
         run: |
