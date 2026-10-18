@@ -1,0 +1,43 @@
+name: Windows validation
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  test-and-package:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npx playwright-core install chromium
+      - run: npm run test:ui
+      - run: npm run test:desktop
+      - name: Validate Windows observation script
+        shell: pwsh
+        run: |
+          $result = & powershell.exe -NoProfile -NonInteractive -Command (Get-Content -Raw src/windows/observe.ps1)
+          if ($LASTEXITCODE -ne 0) { throw 'Windows observation failed' }
+          $observation = $result | ConvertFrom-Json
+          if ($observation.running -isnot [bool]) { throw 'Invalid process observation' }
+      - run: npm run dist:win
+      - name: Save Windows ZIP download
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mori-Windows-x64
+          path: dist/*.zip
+          if-no-files-found: error
+      - name: Build optional installer
+        id: installer
+        continue-on-error: true
+        run: npm run dist:installer
+      - name: Save optional installer download
+        if: steps.installer.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mori-Windows-Installer-x64
+          path: dist/*.exe
+          if-no-files-found: error
