@@ -4,6 +4,12 @@ contextBridge.exposeInMainWorld('mori', Object.freeze({
   getState: () => ipcRenderer.invoke('state:get'),
   saveSettings: patch => ipcRenderer.invoke('settings:save', patch),
   saveUsage: update => ipcRenderer.invoke('usage:save', update),
+  refreshCodex: () => ipcRenderer.invoke('codex:refresh'),
+  selectCodex: () => ipcRenderer.invoke('codex:select'),
+  onHidden: callback => {
+    const listener = () => callback(); ipcRenderer.on('pet:hidden', listener);
+    return () => ipcRenderer.removeListener('pet:hidden', listener);
+  },
   copyToken: () => ipcRenderer.invoke('bridge:copy'),
   action: action => ipcRenderer.invoke('pet:action', action),
   interactive: value => ipcRenderer.send('pet:interactive', value),

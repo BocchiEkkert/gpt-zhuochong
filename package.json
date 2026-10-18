@@ -1,7 +1,7 @@
 {
   "name": "gpt-mori-pet",
-  "version": "0.2.0",
-  "description": "Mori · Windows ChatGPT 桌面伙伴",
+  "version": "0.3.0",
+  "description": "Mori · Codex 双形象桌面伙伴",
   "private": true,
   "main": "src/main.cjs",
   "engines": {
@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "electron .",
-    "test": "node --test tests/model.test.cjs tests/bridge.test.cjs tests/monitor.test.cjs",
+    "test": "node --test tests/model.test.cjs tests/bridge.test.cjs tests/monitor.test.cjs tests/codex.test.cjs",
     "test:ui": "node --test tests/ui.test.cjs",
     "test:desktop": "node tests/desktop-smoke.cjs",
     "dist:win": "electron-builder --win zip --x64",

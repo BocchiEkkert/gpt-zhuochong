@@ -6,9 +6,9 @@ const fs = require('node:fs');
 function parseObservation(text) {
   const value = JSON.parse(text.replace(/^\uFEFF/, '').trim());
   if (typeof value.running !== 'boolean' || !['unknown', 'idle', 'running'].includes(value.status)) throw new Error('Invalid monitor output');
-  return { running: value.running, status: value.running ? value.status : 'unknown', available: value.available === true, supported: true, checkedAt: new Date().toISOString(), error: null };
+  return { running: value.running, status: value.running ? value.status : 'unknown', available: value.available === true, supported: true, checkedAt: new Date().toISOString(), error: null, appName: typeof value.appName === 'string' ? value.appName.slice(0, 40) : null, cliPath: typeof value.cliPath === 'string' ? value.cliPath : null };
 }
-class ChatGPTMonitor {
+class DesktopMonitor {
   constructor(onChange, platform = process.platform, scriptPath = path.join(__dirname, 'windows', 'observe.ps1')) {
     this.onChange = onChange; this.platform = platform; this.scriptPath = scriptPath; this.busy = false; this.stopped = false;
     this.state = { running: false, status: 'unknown', available: false, supported: platform === 'win32', checkedAt: null, error: null };
@@ -32,11 +32,11 @@ class ChatGPTMonitor {
           this.state = parseObservation(stdout);
         } catch {
           // A failed observation is unknown, never evidence that ChatGPT closed.
-          this.state = { ...this.state, status: 'unknown', available: false, checkedAt: null, error: '无法探测 ChatGPT；请检查 Windows PowerShell 是否可用。' };
+          this.state = { ...this.state, status: 'unknown', available: false, checkedAt: null, error: '无法探测 Codex / ChatGPT；请检查 Windows PowerShell 是否可用。' };
         }
         this.onChange(this.state);
       });
   }
   stop() { this.stopped = true; clearInterval(this.timer); this.child?.kill(); }
 }
-module.exports = { ChatGPTMonitor, parseObservation };
+module.exports = { DesktopMonitor, parseObservation };

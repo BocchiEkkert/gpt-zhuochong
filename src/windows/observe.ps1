@@ -2,8 +2,21 @@
 # Conversation text, account cookies and credentials are never read.
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
-$apps = @(Get-Process -Name 'ChatGPT' -ErrorAction SilentlyContinue)
-$result = @{ running = ($apps.Count -gt 0); status = 'unknown'; available = $false }
+$apps = @(Get-Process -Name 'Codex','ChatGPT' -ErrorAction SilentlyContinue)
+# Invisible CLI app-server helpers started by Mori never count as an open desktop client.
+$apps = @($apps | Where-Object { $_.MainWindowHandle -ne 0 })
+$result = @{ running = ($apps.Count -gt 0); status = 'unknown'; available = $false; appName = $null; cliPath = $null }
+if ($apps.Count -gt 0) { $result.appName = ($apps | Select-Object -First 1).ProcessName }
+foreach ($desktop in $apps) {
+  if ($desktop.ProcessName -ne 'Codex') { continue }
+  try {
+    $directory = Split-Path -Parent $desktop.Path
+    foreach ($suffix in @('resources\codex.exe','resources\bin\codex.exe')) {
+      $candidate = Join-Path $directory $suffix
+      if (Test-Path -LiteralPath $candidate -PathType Leaf) { $result.cliPath = $candidate; break }
+    }
+  } catch { }
+}
 if ($apps.Count -gt 0) {
   try {
     Add-Type -AssemblyName UIAutomationClient
@@ -18,10 +31,10 @@ if ($apps.Count -gt 0) {
       $buttons = $root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $condition)
       foreach ($button in $buttons) {
         $name = $button.Current.Name
-        if ($name -match '^(Stop generating|Stop streaming|Stop response|停止生成|停止响应|停止流式传输|停止)$') {
+        if ($name -match '^(Stop generating|Stop streaming|Stop response|Stop turn|Interrupt|停止任务|中断|停止生成|停止响应|停止流式传输|停止)$') {
           $result.status = 'running'; $result.available = $true; break
         }
-        if ($name -match '^(Send prompt|Send message|发送提示|发送消息|发送)$') { $sendFound = $true }
+        if ($name -match '^(Send prompt|Send message|Send|发送提示|发送消息|发送)$') { $sendFound = $true }
       }
       if ($result.status -eq 'running') { break }
     }

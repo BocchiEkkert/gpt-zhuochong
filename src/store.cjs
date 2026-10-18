@@ -2,7 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { randomBytes } = require('node:crypto');
-const { initialState, validateSettings, applyUpdate, normalizeState } = require('./model.cjs');
+const { initialState, validateSettings, migrateSettings, applyUpdate, normalizeState } = require('./model.cjs');
 
 class Store {
   constructor(directory) {
@@ -13,7 +13,7 @@ class Store {
     try {
       const saved = JSON.parse(fs.readFileSync(this.filename, 'utf8'));
       if (saved.schemaVersion !== 1) throw new Error('不支持的存储版本');
-      this.state.settings = { ...this.state.settings, ...validateSettings(saved.settings) };
+      this.state.settings = { ...this.state.settings, ...migrateSettings(saved.settings) };
       // Validate persisted values before allowing them into renderer state.
       const input = {};
       if (saved.usage?.day === this.state.usage.day) {

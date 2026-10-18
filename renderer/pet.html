@@ -1,19 +1,19 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'">
-<link rel="icon" href="../assets/icon.svg"><title>Mori · 桌面伙伴</title><link rel="stylesheet" href="pet.css"></head>
+<link rel="icon" href="../assets/icon.svg"><title>Mori · Codex 桌面伙伴</title><script src="theme-init.js"></script><link rel="stylesheet" href="pet.css"></head>
 <body>
  <main id="companion" aria-label="Mori 桌宠">
   <section class="popover interactive" id="popover" aria-label="用量与任务状态" hidden>
-   <header class="panel-header"><div class="identity"><span class="brand-dot"></span><strong>Mori</strong><span class="panel-subtitle">你的桌面伙伴</span></div><div class="panel-actions"><button id="settings" title="设置" aria-label="打开设置">⚙</button><button id="minimize" title="最小化到托盘" aria-label="最小化到托盘">−</button><button id="quit" title="退出桌宠" aria-label="退出桌宠">×</button></div></header>
+   <header class="panel-header"><div class="identity"><span class="brand-dot"></span><strong>Mori</strong><span class="panel-subtitle">你的桌面伙伴</span></div><div class="panel-actions"><button id="settings" title="设置" aria-label="打开设置">⚙</button><button id="close-pet" title="收起到托盘" aria-label="收起到托盘">×</button></div></header>
    <div class="today"><div class="eyebrow">今日已用 TOKEN <span id="token-source" class="source">未连接</span></div><div class="token-value"><strong id="today-tokens">—</strong><span>tokens</span></div><p id="token-note">等待用量数据，不作估算</p></div>
    <div class="quotas"><div class="quota"><div class="quota-title"><span>5 小时额度</span><strong id="five-value">未知</strong></div><div class="track"><div id="five-bar"></div></div><p id="five-reset">重置时间未知</p><span id="five-source" class="quota-source">未连接</span></div><div class="quota"><div class="quota-title"><span>周额度</span><strong id="weekly-value">未知</strong></div><div class="track"><div id="weekly-bar"></div></div><p id="weekly-reset">重置时间未知</p><span id="weekly-source" class="quota-source">未连接</span></div></div>
    <footer class="task-line"><span class="status-light" id="task-light"></span><span id="task-label">任务状态未知</span><span class="source" id="task-source">未连接</span></footer>
-   <p class="data-note" id="data-note">ChatGPT 个人额度未提供公开查询接口</p>
+   <p class="data-note" id="data-note">等待连接 Codex</p>
   </section>
   <div class="pet-area interactive" id="pet-area">
    <div class="speech" id="speech">今天，也一起慢慢来。</div>
-   <button class="character" id="character" aria-label="Mori，拖动可移动，点击查看用量" title="拖动移动 · 悬停看用量 · 右键设置"><img src="../assets/dragon-girl.png" draggable="false" alt="参考图中的银白长发龙角少女，身着深蓝白金星月礼服，带白色龙翼和龙尾"></button>
+   <button class="character" id="character" aria-label="Mori，拖动可移动，点击查看用量" title="拖动移动 · 悬停看用量 · 右键设置"><img data-character src="../assets/dragon-chibi.png" draggable="false" alt="参考图中的银白长发龙角少女，身着深蓝白金星月礼服，带白色龙翼和龙尾"></button>
    <button class="nameplate" id="nameplate" aria-label="展开用量面板"><span class="mini-light" id="mini-light"></span><strong>Mori</strong><span id="mini-status">待命中</span><span class="up">⌃</span></button>
   </div>
  </main>

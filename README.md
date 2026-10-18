@@ -1,79 +1,93 @@
-# Mori · ChatGPT 桌宠
+# Mori · Codex 桌宠
 
-一个面向 **Windows 10 / 11、ChatGPT 桌面版**的本地桌面伙伴。采用参考图中的银发紫瞳龙角少女形象：保留白色龙翼、龙尾及深蓝白金星月礼服，可继续扩展功能。
+面向 **Windows 10 / 11** 的本地桌面伙伴：随 ChatGPT / Codex 桌面版显示，悬停查看 **Codex 编程额度**、今日 token 和任务状态。支持原比例立绘与 Q 版切换、大小调整、暗色主题和托盘待命。
 
-<img src="assets/dragon-girl.png" width="180" alt="参考图中的银发龙角少女桌宠">
+<img src="assets/dragon-chibi.png" width="180" alt="Q 版银发龙角少女"> <img src="assets/dragon-girl.png" width="145" alt="原比例银发龙角少女">
 
-## 使用
+两个形象均采用银发紫瞳、龙角、白色龙翼和龙尾、蓝白金礼服，头饰与胸针使用 GPT 结形标识。
 
-先登录 GitHub，打开 [Windows 构建与下载页面](https://github.com/BocchiEkkert/gpt-zhuochong/actions/workflows/windows.yml)，选择成功运行，在页面底部 **Artifacts** 下载 `Mori-Windows-x64`。GitHub 会额外包装一层 ZIP，先解开下载文件，再解压里面的程序 ZIP。若存在 `Mori-Windows-Installer-x64`，也可下载并解压其中的 EXE 安装向导。
+## 下载与使用
 
-直接构建得到的程序包为 `dist/Mori-GPT-Pet-0.2.0-x64.zip`，**完整解压**到固定目录，双击 `Mori GPT Pet.exe`。首次启动会显示桌宠。不要单独移动 exe，旁边的资源目录是程序的一部分。
+登录 GitHub，打开 [Windows 构建与下载页面](https://github.com/BocchiEkkert/gpt-zhuochong/actions/workflows/windows.yml)，选择 **0.3.0 或更新版本**的成功运行，在底部 **Artifacts** 下载 `Mori-Windows-x64`。
 
-- 悬停：查看今日 token、5 小时剩余额度、周剩余额度与任务状态。
-- 单击形象或名字：固定 / 收起面板；拖动形象：移动桌宠。
-- 右键：打开设置；面板上的 `−`：隐藏到托盘；`×`：真正退出。
-- 单击 / 双击托盘图标可恢复，托盘右键可设置或退出。
-- 设置中可调节 65%–160% 大小、置顶、减少动画和重置位置。
+GitHub 会额外包装一层 ZIP：先解开下载文件，再完整解压里面的 `Mori-GPT-Pet-0.3.0-x64.zip` 到固定目录，运行 `Mori GPT Pet.exe`。不要单独移动 exe，旁边的资源目录也是程序的一部分。若该次构建提供 `Mori-Windows-Installer-x64`，也可解压并运行安装向导。
 
-**启动联动需要 Mori 在后台待命。** 解压运行后在设置中开启「开机后在托盘待命」，并保留「随 ChatGPT 显示」。此后每 5 秒检测 `ChatGPT.exe`：启动时出现，进程退出后隐藏。最小化到托盘后不会马上弹回来，下次 ChatGPT 启动会再次出现。退出 Mori 后将停止检测，需再次打开 Mori 或下次登录后启动。ChatGPT 窗口关闭但后台进程仍在时，视为仍在运行。
+- 悬停查看用量和任务；单击形象或名字固定 / 收起面板，拖动形象移动位置。
+- 右键形象或点击齿轮打开设置；可切换两种形象、浅色 / 暗色主题、65%–160% 大小、置顶和减少动画。
+- **点击窗口的 `×` 或在桌宠 / 设置窗口获得焦点时按 Esc，都收起到托盘，继续后台运行。** Esc 不会全局拦截其他软件的按键。新版不再提供最小化按钮。
+- 单击 / 双击托盘图标恢复。**真正退出请使用托盘右键菜单「退出桌宠」。**
 
-源码运行时不会修改系统开机项，开机选项仅在打包后的 Windows 程序中启用。开启后请保留程序目录位置，移动目录后需要重新关闭再开启该选项。
+### 启动联动
 
-### 更新已有版本
+Mori 需要先在后台运行。在设置中开启「开机后在托盘待命」，并保留启动联动选项。程序每约 5 秒检测带窗口的 ChatGPT / Codex 桌面进程，也可随近期本机 Codex 运行任务显示；不将自己启动的隐藏额度查询进程当作桌面应用。手动收起后不会立即弹回，下次桌面应用重新启动时恢复联动。
 
-先在托盘右键菜单选择「退出 Mori」，再将新版程序完整解压并覆盖原程序目录，最后运行 `Mori GPT Pet.exe`。保持原目录可继续使用已有开机启动项；设置和用量记录保存在用户数据目录，升级后继续保留。
+开机项仅在打包后的 Windows 程序启用。启用后保留程序目录位置，移动目录需重新关闭并开启开机选项。真正退出 Mori 后，联动检测停止。
 
-## 哪些信息能自动读取
+### 升级已有版本
 
-| 信息 | 当前数据来源 | 无法读取时 |
-| --- | --- | --- |
-| ChatGPT 是否启动 | Windows 进程检测 | 说明探测失败，不误报已退出 |
-| 是否正在生成 | Windows UI Automation 的发送 / 停止按钮 | 显示「任务状态未知」 |
-| 今日 token | 手动录入，或可信本机工具推送 | 显示 `—` |
-| 5 小时、周剩余额度 | 手动录入，或可信本机工具推送 | 显示「未知」 |
+先在**托盘右键菜单退出旧版**，再将新版完整解压、覆盖原程序目录，最后运行 `Mori GPT Pet.exe`。保持目录位置可继续使用开机项；设置与手动记录保存在程序目录之外，升级后保留。旧版的启动联动设置会迁移，新版默认使用 Codex 自动数据源。
 
-ChatGPT **没有公开的个人用量 / 订阅额度查询接口**。OpenAI API 账单也不等于 ChatGPT 订阅额度。程序不会从请求次数估算 token，不请求账户密码，不读取 Cookie、聊天正文或调用私有账户接口。手动数据和接口数据会分别标明来源与更新时间。
+## Codex 编程额度怎么接入
 
-「5 小时」是额度窗口名称，并非启动桌宠后开始计时。可根据 ChatGPT 实际展示的信息录入剩余百分比和重置时间；不同套餐、模型和账户可能采用不同的限制。重置时间可留空。
+设置默认选择「Codex 自动读取」。程序通过官方 **Codex CLI 的 `app-server` 协议**只读查询账户，不会执行编程任务、批准工具请求或替你登录。
 
-- token 是**本机当天累计值**，不是单次增量；跨本地零点后恢复未知。
-- 重置时间到期后，额度恢复未知，不假定恢复到 100%。未提供重置时间的记录会保留，按更新时间自行判断。
-- 接口任务心跳超过 2 分钟后失效，回退到界面检测；需要长任务持续显示时每 30–60 秒发一次心跳。
-- 手动任务状态会保留到选择「自动检测 / 接口」或程序重启。接口下次上报任务可覆盖手动状态。
-- 只保存修改过的录入字段，避免把未修改的接口数据重新标记为手动。
+本机需有可运行的官方 Codex 原生程序，并已通过 **ChatGPT 账户**登录：
 
-## 源码启动与打包
+1. 优先使用 Codex 桌面版内置的 `codex.exe`，或已安装的官方 [Codex CLI](https://developers.openai.com/codex/cli)。程序会尝试自动发现它们。
+2. 如需安装 CLI，可在自己的终端运行 `npm install -g @openai/codex`，再运行 `codex login` 完成官方登录。
+3. 设置中点击刷新。如果找不到程序，使用「选择 Codex 程序」指定官方 `codex.exe`；也可清除指定路径重新自动查找。只有 ChatGPT 桌面版、不含 Codex CLI 时，无法直接读取 Codex 额度。
 
-需要 Node.js **22.12+**（推荐 24 LTS）、npm 和联网下载 Electron。
+桌宠不会索取密码、读取浏览器 Cookie 或复制登录凭证。Codex 子进程使用本机已有的登录配置，**无需把账户密钥交给桌宠**。API Key / 其他提供商登录不对应 ChatGPT 订阅的 Codex 五小时和周额度。
+
+| 显示内容 | 自动来源与限制 |
+| --- | --- |
+| 5 小时 / 周剩余 | `account/rateLimits/read` 返回的 Codex 300 / 10080 分钟窗口；约 30 秒刷新。显示 `100 − usedPercent`，零余额正常显示。其他模型额度不冒充 Codex 额度。 |
+| 今日 token | 可选的 `account/usage/read` 日统计；约 60 秒刷新，匹配本机当天日期。Codex 版本或服务端未提供时显示未知，可能有同步延迟。不是本机任务 token 的估算。 |
+| 任务状态 | 读取近期本机 Codex 会话日志中的任务生命周期元数据；无法判断时尝试 Windows UI Automation 的停止 / 发送按钮，仍无法判断则显示未知。不是完整的云端任务列表。 |
+
+「5 小时」表示账户额度窗口，不是桌宠运行倒计时。剩余百分比与重置时间以官方返回值为准；额度过期后显示未知，不假定自动恢复到 100%。断开连接、切换账户或数据超过 2 分钟时不继续展示旧额度。缺失的 token 不显示成 0，也不会把历史总量当作今日用量。
+
+本地日志只提取事件类型和时间，不保存聊天正文；界面检测也不读取聊天正文。超过 2 分钟的任务状态失效，长时间没有新事件时可能显示未知。自动查询不会调用消费 token 的模型接口。
+
+### 手动记录与扩展工具
+
+设置可切换「手动记录」或「本机接口」数据源。各来源明确标注，不把手动数值当作官方查询结果。
+
+- 保存手动记录会切换到手动数据源；今日 token 为当天累计值，跨本地零点后恢复未知。
+- 本机接口推送不会自动切换当前来源，需在设置中选择「本机接口」才展示接口数据。
+- 额度可带重置时间，到期恢复未知；未提供重置时间时按更新时间判断。
+- 接口任务需每 30–60 秒发送心跳，超过 2 分钟显示未知。
+
+接口格式、鉴权和示例见 [本机接口文档](docs/connector.md)。
+
+## 源码开发与打包
+
+需要 Node.js **22.12+**（推荐 24 LTS）、npm 和联网下载 Electron。使用现有检出目录即可。
 
 ```powershell
 npm ci
 npm start
 ```
 
-生成 Windows x64 免安装程序包：
+Windows x64 免安装包：
 
 ```powershell
 npm run dist:win
 ```
 
-产物在 `dist/`。如需安装 / 卸载向导，在 Windows 上执行 `npm run dist:installer`，生成 `Mori-GPT-Pet-0.2.0-x64.exe`。程序尚未配置发行者代码签名。ARM Windows 用户可在受支持的 x64 兼容环境运行，原生 ARM64 打包尚未验证。
+产物位于 `dist/`。可在 Windows 执行 `npm run dist:installer` 生成安装向导。程序尚未配置发行者代码签名。原生 ARM64 尚未验证。
 
-macOS / Linux 可用于界面和本机接口开发，但 ChatGPT 启动联动、开机项和任务界面探测以 Windows 为目标。
+macOS / Linux 可用于界面、数据协议和本机接口开发；启动联动、开机项、UI Automation 和最终桌面体验以 Windows 为目标。
 
-## 扩展接口
+主要扩展位置：
 
-见 [本机接口文档](docs/connector.md)。例如后续可接入自己的任务执行器、可靠的用量采集器、提醒、更多皮肤或交互。
+- `src/codex-client.cjs`、`codex-service.cjs`、`codex-discovery.cjs`：只读协议、刷新、程序发现。
+- `src/codex-data.cjs`、`view-state.cjs`、`model.cjs`：数据校验、来源选择、跨日与到期。
+- `src/session-activity.cjs`：本地任务事件；`src/windows/observe.ps1`：Windows 界面探测。
+- `src/main.cjs`：窗口、托盘、启动联动、开机项与 IPC；`src/bridge.cjs`：本机鉴权接口。
+- `renderer/`：隔离运行的界面，无 Node.js 权限；`assets/dragon-chibi.png`、`dragon-girl.png`：透明角色素材。
 
-- `src/model.cjs`：数据校验、跨日、额度到期、来源与任务有效期。
-- `src/bridge.cjs`：只监听 `127.0.0.1:47831` 的鉴权接口。
-- `src/monitor.cjs`、`src/windows/observe.ps1`：Windows 探测。
-- `src/main.cjs`：托盘、窗口、开机项、单实例与拖动位置。
-- `renderer/`：桌宠和设置界面，隔离运行，无 Node.js 权限。
-- `assets/dragon-girl.png`：依据用户提供的角色参考图生成的透明背景 PNG；桌宠与设置页共用此素材，按比例显示。原始生成文件保留在云端生成目录。
-
-数据保存于 Electron 的用户数据目录，Windows 通常为 `%APPDATA%\Mori GPT Pet\`。包括 `state.json` 和 `bridge-token`；不会上传到服务器。可在 Electron 中通过 `app.getPath('userData')` 确认实际路径。不要分享 `bridge-token`。
+设置与手动记录位于 Electron 用户数据目录，Windows 通常为 `%APPDATA%\Mori GPT Pet\`，包括 `state.json` 与 `bridge-token`。官方账户额度仅保存在内存，不写入记录文件；桌宠不上传这些本地记录。不要分享 `bridge-token`。
 
 ## 验证
 
@@ -82,18 +96,13 @@ npm test
 npx playwright-core install chromium
 npm run test:ui
 npm run test:desktop
+npm exec --yes --package=@openai/codex@0.163.0 -- node scripts/verify-official-codex.cjs
 ```
 
-界面测试使用 Chromium，本机已安装的 Chromium 可通过 `CHROMIUM_PATH` 指定。Linux 默认使用 `/usr/bin/chromium`；桌面测试还需 X11 显示服务（例如 `xvfb-run -a npm run test:desktop`）。生产程序启用 Electron 沙箱；受限 CI 的测试可单独指定 `MORI_TEST_NO_SANDBOX=1`，不会改变生产设置。
+核心测试覆盖额度窗口、过期、日统计、账户模式、协议传输、任务事件、存储、接口鉴权和数据源隔离。界面与真实 Electron 测试覆盖两种形象、主题、设置持久化、收起到托盘、恢复和后台接口。
 
-现有测试覆盖输入校验、跨日与到期、存储恢复、接口鉴权与拒绝网页请求、悬停与设置交互、窗口隐藏恢复，以及真实 Electron 进程中的 IPC、接口更新与重启。测试数据与真实账户数据无关。界面测试截图位于 `test-results/`。
+官方 Codex 协议验证使用**隔离的未登录配置**，不接触个人凭证；配额响应使用测试数据。云端无法替代用户已登录账户的实际额度验收。Windows CI 会运行上述检查、PowerShell 探测验证并打包，先保存 `Mori-Windows-x64`，再尝试独立的可选安装器步骤。
 
-本次在 Linux 云环境中通过核心测试、界面测试和真实 Electron 冒烟测试，并构建 Windows 免安装程序包。云端 NSIS 安装包构建受 Wine 运行时兼容问题阻塞；免安装包不依赖 Wine，安装版应在 Windows 构建。**Windows 本机的 ChatGPT 进程检测、UI Automation、托盘、开机启动和安装 / 卸载仍需验收**：
+Linux 界面测试默认使用 `/usr/bin/chromium`，也可通过 `CHROMIUM_PATH` 指定；桌面测试需要 X11（例如 `xvfb-run -a npm run test:desktop`）。生产启用 Electron 沙箱，受限 CI 测试可指定 `MORI_TEST_NO_SANDBOX=1`。测试截图位于 `test-results/`。
 
-1. 解压运行，分别验证悬停、拖动、大小、托盘恢复及退出。
-2. 开启开机待命，退出并重新登录 Windows，确认托盘出现。
-3. 打开 ChatGPT，确认桌宠在约 5 秒内显示；完全退出 ChatGPT，确认隐藏。
-4. 让 ChatGPT 生成回复，检查任务来源为「界面检测」；客户端版本未暴露匹配按钮时，应显示未知。
-5. 保存手动用量，重启 Mori，确认用量和设置保留；免安装版删除前先关闭开机待命并退出 Mori；使用安装版时，另行验证卸载会移除快捷方式和开机项。
-
-仓库包含 Windows CI，在代码推送后运行测试和打包。免安装 ZIP 会先保存为 `Mori-Windows-x64` 下载产物，安装器作为独立可选步骤构建，不影响已生成的 ZIP。Windows CI 的核心、界面、Electron 冒烟测试和探测脚本检查已经通过；ChatGPT 实际运行时的联动和生成按钮识别仍需实机验收。
+Windows 实机需检查：登录 Codex 后刷新并对照官方额度页；ChatGPT / Codex 启动联动；任务生成时的状态；系统托盘恢复、开机项，以及安装 / 卸载。无法读取的字段应保持未知。

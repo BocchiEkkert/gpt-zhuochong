@@ -2,7 +2,8 @@
 
 const TASK_STATES = new Set(['unknown', 'idle', 'running', 'error']);
 const DEFAULT_SETTINGS = Object.freeze({
-  scale: 1, alwaysOnTop: true, followChatGPT: true,
+  scale: 1, alwaysOnTop: true, followCodex: true,
+  avatar: 'chibi', theme: 'light', dataSource: 'codex', codexExecutable: '',
   startAtLogin: false, reduceMotion: false, position: null,
 });
 
@@ -33,6 +34,11 @@ function validateSettings(input) {
   for (const [key, value] of Object.entries(input)) {
     if (key === 'scale') {
       if (!Number.isFinite(value) || value < 0.65 || value > 1.6) fail('大小应在 65%–160% 之间');
+    } else if (['avatar', 'theme', 'dataSource'].includes(key)) {
+      const choices = { avatar: ['original', 'chibi'], theme: ['light', 'dark'], dataSource: ['codex', 'manual', 'connector'] };
+      if (!choices[key].includes(value)) fail(`${key} 选项无效`);
+    } else if (key === 'codexExecutable') {
+      if (typeof value !== 'string' || value.length > 4096 || /[\u0000-\u001f]/.test(value)) fail('Codex 程序路径无效');
     } else if (key === 'position') {
       if (value !== null && (!object(value) || !Number.isFinite(value.x) || !Number.isFinite(value.y))) fail('窗口坐标无效');
     } else if (typeof value !== 'boolean') fail(`${key} 必须是布尔值`);
@@ -109,4 +115,12 @@ function taskForView(state, monitor, date = new Date()) {
   }
   return { status: 'unknown', label: '', source: 'unknown', updatedAt: null };
 }
-module.exports = { DEFAULT_SETTINGS, localDay, initialState, validateSettings, validateUpdate, normalizeState, applyUpdate, taskForView };
+function migrateSettings(saved) {
+  const settings = { ...saved };
+  if ('followChatGPT' in settings) {
+    if (!('followCodex' in settings)) settings.followCodex = settings.followChatGPT;
+    delete settings.followChatGPT;
+  }
+  return validateSettings(settings);
+}
+module.exports = { DEFAULT_SETTINGS, unknownQuota, migrateSettings, localDay, initialState, validateSettings, validateUpdate, normalizeState, applyUpdate, taskForView };
