@@ -6,7 +6,9 @@
 
 ## 使用
 
-下载或构建 `dist/Mori-GPT-Pet-0.1.0-x64.zip`，**完整解压**到固定目录，双击 `Mori GPT Pet.exe`。首次启动会显示桌宠。不要单独移动 exe，旁边的资源目录是程序的一部分。
+先登录 GitHub，打开 [Windows 构建与下载页面](https://github.com/BocchiEkkert/gpt-zhuochong/actions/workflows/windows.yml)，选择成功运行，在页面底部 **Artifacts** 下载 `Mori-Windows-x64`。GitHub 会额外包装一层 ZIP，先解开下载文件，再解压里面的程序 ZIP。若存在 `Mori-Windows-Installer-x64`，也可下载并解压其中的 EXE 安装向导。
+
+直接构建得到的程序包为 `dist/Mori-GPT-Pet-0.1.0-x64.zip`，**完整解压**到固定目录，双击 `Mori GPT Pet.exe`。首次启动会显示桌宠。不要单独移动 exe，旁边的资源目录是程序的一部分。
 
 - 悬停：查看今日 token、5 小时剩余额度、周剩余额度与任务状态。
 - 单击形象或名字：固定 / 收起面板；拖动形象：移动桌宠。
@@ -90,4 +92,4 @@ npm run test:desktop
 4. 让 ChatGPT 生成回复，检查任务来源为「界面检测」；客户端版本未暴露匹配按钮时，应显示未知。
 5. 保存手动用量，重启 Mori，确认用量和设置保留；免安装版删除前先关闭开机待命并退出 Mori；使用安装版时，另行验证卸载会移除快捷方式和开机项。
 
-仓库包含 Windows CI，在代码推送后运行测试和打包，并保存程序包和安装包为 Actions artifact；当前尚未触发远端 CI。
+仓库包含 Windows CI，在代码推送后运行测试和打包。免安装 ZIP 会先保存为 `Mori-Windows-x64` 下载产物，安装器作为独立可选步骤构建，不影响已生成的 ZIP。Windows CI 的核心、界面、Electron 冒烟测试和探测脚本检查已经通过；ChatGPT 实际运行时的联动和生成按钮识别仍需实机验收。
