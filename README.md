@@ -1,14 +1,14 @@
 # Mori · ChatGPT 桌宠
 
-一个面向 **Windows 10 / 11、ChatGPT 桌面版**的本地桌面伙伴。原创薄荷绿短发形象，可继续扩展功能。
+一个面向 **Windows 10 / 11、ChatGPT 桌面版**的本地桌面伙伴。采用参考图中的银发紫瞳龙角少女形象：保留白色龙翼、龙尾及深蓝白金星月礼服，可继续扩展功能。
 
-<img src="assets/mori.svg" width="160" alt="原创桌宠 Mori">
+<img src="assets/dragon-girl.png" width="180" alt="参考图中的银发龙角少女桌宠">
 
 ## 使用
 
 先登录 GitHub，打开 [Windows 构建与下载页面](https://github.com/BocchiEkkert/gpt-zhuochong/actions/workflows/windows.yml)，选择成功运行，在页面底部 **Artifacts** 下载 `Mori-Windows-x64`。GitHub 会额外包装一层 ZIP，先解开下载文件，再解压里面的程序 ZIP。若存在 `Mori-Windows-Installer-x64`，也可下载并解压其中的 EXE 安装向导。
 
-直接构建得到的程序包为 `dist/Mori-GPT-Pet-0.1.0-x64.zip`，**完整解压**到固定目录，双击 `Mori GPT Pet.exe`。首次启动会显示桌宠。不要单独移动 exe，旁边的资源目录是程序的一部分。
+直接构建得到的程序包为 `dist/Mori-GPT-Pet-0.2.0-x64.zip`，**完整解压**到固定目录，双击 `Mori GPT Pet.exe`。首次启动会显示桌宠。不要单独移动 exe，旁边的资源目录是程序的一部分。
 
 - 悬停：查看今日 token、5 小时剩余额度、周剩余额度与任务状态。
 - 单击形象或名字：固定 / 收起面板；拖动形象：移动桌宠。
@@ -54,7 +54,7 @@ npm start
 npm run dist:win
 ```
 
-产物在 `dist/`。如需安装 / 卸载向导，在 Windows 上执行 `npm run dist:installer`，生成 `Mori-GPT-Pet-0.1.0-x64.exe`。程序尚未配置发行者代码签名。ARM Windows 用户可在受支持的 x64 兼容环境运行，原生 ARM64 打包尚未验证。
+产物在 `dist/`。如需安装 / 卸载向导，在 Windows 上执行 `npm run dist:installer`，生成 `Mori-GPT-Pet-0.2.0-x64.exe`。程序尚未配置发行者代码签名。ARM Windows 用户可在受支持的 x64 兼容环境运行，原生 ARM64 打包尚未验证。
 
 macOS / Linux 可用于界面和本机接口开发，但 ChatGPT 启动联动、开机项和任务界面探测以 Windows 为目标。
 
@@ -67,7 +67,7 @@ macOS / Linux 可用于界面和本机接口开发，但 ChatGPT 启动联动、
 - `src/monitor.cjs`、`src/windows/observe.ps1`：Windows 探测。
 - `src/main.cjs`：托盘、窗口、开机项、单实例与拖动位置。
 - `renderer/`：桌宠和设置界面，隔离运行，无 Node.js 权限。
-- `assets/mori.svg`：可编辑的原创矢量角色，支持透明背景和任意缩放。
+- `assets/dragon-girl.png`：依据用户提供的角色参考图生成的透明背景 PNG；桌宠与设置页共用此素材，按比例显示。原始生成文件保留在云端生成目录。
 
 数据保存于 Electron 的用户数据目录，Windows 通常为 `%APPDATA%\Mori GPT Pet\`。包括 `state.json` 和 `bridge-token`；不会上传到服务器。可在 Electron 中通过 `app.getPath('userData')` 确认实际路径。不要分享 `bridge-token`。
 

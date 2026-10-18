@@ -1,6 +1,6 @@
 {
   "name": "gpt-mori-pet",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Mori · Windows ChatGPT 桌面伙伴",
   "private": true,
   "main": "src/main.cjs",

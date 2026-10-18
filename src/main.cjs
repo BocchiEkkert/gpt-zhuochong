@@ -37,7 +37,7 @@ else {
     const current = pet?.getBounds();
     const preferred = store.read().settings.position;
     const area = screen.getDisplayNearestPoint(preferred || screen.getCursorScreenPoint()).workArea;
-    const width = Math.min(390, area.width), height = Math.min(Math.ceil(380 + 205 * scale), area.height);
+    const width = Math.min(390, area.width), height = Math.min(Math.ceil(380 + 264 * scale), area.height);
     const x = reposition && current ? current.x + current.width - width : preferred?.x ?? area.x + area.width - width - 24;
     const y = reposition && current ? current.y + current.height - height : preferred?.y ?? area.y + area.height - height - 16;
     pet.setBounds({ x: Math.round(Math.max(area.x, Math.min(x, area.x + area.width - width))),
@@ -106,7 +106,7 @@ else {
       }
       broadcast();
     }, process.platform, app.isPackaged ? path.join(process.resourcesPath, 'windows', 'observe.ps1') : path.join(__dirname, 'windows', 'observe.ps1'));
-    pet = new BrowserWindow({ width: 390, height: 585, frame: false, transparent: true,
+    pet = new BrowserWindow({ width: 390, height: 644, frame: false, transparent: true,
       resizable: false, maximizable: false, skipTaskbar: true, hasShadow: false,
       focusable: false, alwaysOnTop: store.read().settings.alwaysOnTop, show: false,
       webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true } });

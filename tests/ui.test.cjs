@@ -55,7 +55,7 @@ async function load(file, state = fixture(), viewport = { width: 950, height: 77
   return { page, errors };
 }
 test('hover reveals unknown usage; minimize, settings and exit send the intended commands', async () => {
-  const { page, errors } = await load('pet.html', fixture(), { width: 390, height: 585 });
+  const { page, errors } = await load('pet.html', fixture(), { width: 390, height: 644 });
   try {
     assert.equal(await page.locator('#popover').isVisible(), false);
     await page.locator('#character').hover();
@@ -74,15 +74,37 @@ test('hover reveals unknown usage; minimize, settings and exit send the intended
 test('quota labels retain manual source; largest pet keeps panel inside its window', async () => {
   const data = applyUpdate(initialState(), { day: localDay(), todayTokens: 18420, fiveHour: { remainingPercent: 72 }, weekly: { remainingPercent: 43 }, task: { status: 'running', label: '整理项目笔记' } }, 'manual');
   const state = fixture(data); state.settings.scale = 1.6;
-  const { page, errors } = await load('pet.html', state, { width: 390, height: 708 });
+  const { page, errors } = await load('pet.html', state, { width: 390, height: 803 });
   try {
     await page.locator('#nameplate').click();
     assert.equal(await page.locator('#today-tokens').textContent(), '18,420');
     assert.equal(await page.locator('#token-source').textContent(), '手动录入');
     assert.equal(await page.locator('#five-value').textContent(), '剩余 72%');
     assert.equal(await page.locator('#task-label').textContent(), '整理项目笔记');
-    const bounds = await page.locator('#popover').boundingBox();
-    assert.ok(bounds.x >= 0 && bounds.y >= 0 && bounds.y + bounds.height <= 708);
+    const sprite = page.locator('#character img');
+    await sprite.evaluate(img => img.decode());
+    const imageInfo = await sprite.evaluate(img => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+      const context = canvas.getContext('2d'); context.drawImage(img, 0, 0);
+      return { width: img.naturalWidth, height: img.naturalHeight,
+        cornerAlpha: context.getImageData(0, 0, 1, 1).data[3],
+        bodyAlpha: context.getImageData(512, 300, 1, 1).data[3],
+        file: new URL(img.src).pathname };
+    });
+    assert.equal(imageInfo.file, '/assets/dragon-girl.png');
+    assert.equal(imageInfo.cornerAlpha, 0);
+    assert.ok(imageInfo.bodyAlpha > 240);
+    const imageBounds = await sprite.boundingBox();
+    assert.ok(Math.abs(imageBounds.width / imageBounds.height - imageInfo.width / imageInfo.height) < 0.01);
+    for (const height of [803, 728]) {
+      await page.setViewportSize({ width: 390, height });
+      const bounds = await page.locator('#popover').boundingBox();
+      const characterBounds = await page.locator('#character').boundingBox();
+      assert.ok(bounds.x >= 0 && bounds.y >= 0 && bounds.y + bounds.height <= height);
+      assert.ok(characterBounds.y >= 0 && characterBounds.y + characterBounds.height <= height);
+    }
+    await page.setViewportSize({ width: 390, height: 803 });
     assert.deepEqual(errors, []);
     await page.screenshot({ path: path.join(output, 'pet-large.png'), omitBackground: true });
   } finally { await page.close(); }
@@ -122,7 +144,7 @@ test('source preview leaves startup unavailable and interface fits a narrow sett
     assert.deepEqual(errors, []);
   } finally { await page.close(); }
 });
-test('save a screenshot of the original character and settings, without example usage', async () => {
+test('save a screenshot of the reference character and settings, without example usage', async () => {
   const { page, errors } = await load('settings.html');
   try {
     await page.screenshot({ path: path.join(output, 'settings.png'), fullPage: true });
