@@ -22,7 +22,7 @@ class DesktopMonitor {
     this.busy = true;
     let script;
     try { script = fs.readFileSync(this.scriptPath, 'utf8').replace(/^\uFEFF/, ''); }
-    catch { this.busy = false; this.state = { ...this.state, status: 'unknown', available: false, checkedAt: null, error: '状态探测脚本缺失，请重新安装 Mori。' }; this.onChange(this.state); return; }
+    catch { this.busy = false; this.state = { ...this.state, status: 'unknown', available: false, checkedAt: null, error: '状态探测脚本缺失，请重新安装 Miko。' }; this.onChange(this.state); return; }
     this.child = execFile('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', script],
       { windowsHide: true, timeout: 8000, maxBuffer: 64 * 1024, encoding: 'utf8' }, (error, stdout) => {
         this.busy = false; this.child = null;

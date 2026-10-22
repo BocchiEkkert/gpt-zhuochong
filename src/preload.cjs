@@ -2,6 +2,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('mori', Object.freeze({
   getState: () => ipcRenderer.invoke('state:get'),
+  scalePet: steps => ipcRenderer.invoke('pet:scale', steps),
   saveSettings: patch => ipcRenderer.invoke('settings:save', patch),
   saveUsage: update => ipcRenderer.invoke('usage:save', update),
   refreshCodex: () => ipcRenderer.invoke('codex:refresh'),

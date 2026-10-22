@@ -1,5 +1,5 @@
 'use strict';
-const $ = id => document.getElementById(id), api = window.mori, view = window.MoriView;
+const $ = id => document.getElementById(id), api = window.mori, view = window.MikoView;
 let state, initialized = false, toastTimer, scaleTimer;
 const dirty = new Set(), fields = ['tokens', 'five-percent', 'five-reset-input', 'week-percent', 'week-reset-input', 'task', 'task-label'];
 const message = error => String(error.message || error).replace(/^Error invoking remote method '[^']+': (?:\w+Error: )?/, '');
@@ -18,7 +18,7 @@ function render(next) {
   if ($('login').disabled) $('login-note').textContent = '使用打包后的 Windows 程序可开启；源码运行时不修改开机项';
   $('connection-dot').classList.toggle('connected', next.codex.status === 'connected');
   $('connection-status').textContent = settings.dataSource !== 'codex' ? (settings.dataSource === 'manual' ? '手动记录模式' : '本机接口模式') : ({ connected: 'Codex 额度已连接', connecting: '正在连接 Codex', missing: '未找到 Codex CLI', signedOut: 'Codex 尚未登录', unsupported: 'Codex 接口不可用', error: 'Codex 连接中断', disabled: '等待 Codex 连接' })[next.codex.status] || '等待 Codex 连接';
-  $('hero-bubble').textContent = next.task.status === 'running' ? '认真工作中，陪你一起。' : '今天，也一起慢慢来。';
+  $('hero-bubble').textContent = next.task.status === 'running' ? window.MikoLines.status.busy : window.MikoLines.status.ready;
   const warnings = [next.platform !== 'win32' ? '当前系统可使用 Codex CLI 读取额度；桌面客户端自动显示功能以 Windows 为目标。' : null, next.warning, next.integration.error].filter(Boolean);
   $('platform-notice').textContent = warnings.join(' '); $('platform-notice').hidden = !warnings.length;
   $('codex-status').textContent = next.codex.message;
@@ -42,7 +42,7 @@ function render(next) {
   $('bridge-status').textContent = next.integration.ready ? `接口已就绪${next.integration.lastEventAt ? ' · 上次同步 ' + view.clock(next.integration.lastEventAt) : ' · 等待工具连接'}` : next.integration.error || '接口启动中';
   $('copy-token').disabled = !next.integration.ready; initialized = true;
 }
-api.onState(render); api.onNotice(toast); api.getState().then(render).catch(() => toast('连接桌宠失败，请重启 Mori。'));
+api.onState(render); api.onNotice(toast); api.getState().then(render).catch(() => toast('连接桌宠失败，请重启 Miko。'));
 async function saveSettings(patch) { try { render(await api.saveSettings(patch)); toast('设置已保存'); } catch (error) { if (state) render(state); toast(message(error)); } }
 for (const [id, key] of [['follow', 'followCodex'], ['login', 'startAtLogin'], ['topmost', 'alwaysOnTop'], ['motion', 'reduceMotion']]) $(id).addEventListener('change', () => { if (initialized) saveSettings({ [key]: $(id).checked }); });
 $('dark-theme').addEventListener('change', () => saveSettings({ theme: $('dark-theme').checked ? 'dark' : 'light' }));
@@ -74,3 +74,8 @@ $('copy-token').addEventListener('click', async () => { try { await api.copyToke
 for (const [id, action] of [['show-pet', 'show'], ['reset-position', 'reset-position'], ['codex-help', 'codex-help']]) $(id).addEventListener('click', () => api.action(action));
 window.addEventListener('keydown', event => { if (event.key === 'Escape') { event.preventDefault(); api.action('hide'); } });
 for (const link of document.querySelectorAll('nav a')) link.addEventListener('click', () => { for (const other of document.querySelectorAll('nav a')) other.classList.toggle('active', other === link); });
+
+$('exit-pet').addEventListener('click', async () => {
+  $('exit-pet').disabled = true;
+  try { await api.action('quit'); } catch (error) { $('exit-pet').disabled = false; toast(message(error)); }
+});

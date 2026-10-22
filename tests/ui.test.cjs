@@ -47,6 +47,7 @@ async function load(file, state = fixture(), viewport = { width: 1000, height: 8
       },
       refreshCodex: async () => { calls.push(['refresh']); return structuredClone(current); },
       selectCodex: async () => { calls.push(['select']); return structuredClone(current); },
+      scalePet: async steps => { calls.push(['scale', steps]); current.settings.scale = window.MikoLayout.zoomScale(current.settings.scale, steps); return structuredClone(current); },
       copyToken: async () => { calls.push(['copy']); },
       action: async action => calls.push(['action', action]),
       interactive: value => calls.push(['interactive', value]), drag: value => calls.push(['drag', value]),
@@ -71,10 +72,10 @@ test('hover shows unknown data; close and Escape go to tray, with no minimize or
     assert.deepEqual(errors, []);
   } finally { await page.close(); }
 });
-test('both character images have transparent backgrounds and remain within narrow desktop windows at maximum size', async () => {
+test('both character images retain true 300% size and keep the quota panel readable', async () => {
   const data = applyUpdate(initialState(), { day: localDay(), todayTokens: 18420, fiveHour: { remainingPercent: 72 }, weekly: { remainingPercent: 43 }, task: { status: 'running', label: '界面测试示例' } }, 'manual');
-  data.settings.scale = 1.6; data.settings.reduceMotion = true; data.settings.dataSource = 'manual';
-  const state = fixture(data); const { page, errors } = await load('pet.html', state, { width: 390, height: 851 });
+  data.settings.scale = 3; data.settings.reduceMotion = true; data.settings.dataSource = 'manual';
+  const state = fixture(data); const { page, errors } = await load('pet.html', state, { width: 1080, height: 1080 });
   try {
     for (const avatar of ['original', 'chibi']) {
       const next = structuredClone(state); next.settings.avatar = avatar; await page.evaluate(next => pushState(next), next);
@@ -88,13 +89,15 @@ test('both character images have transparent backgrounds and remain within narro
       });
       assert.equal(info.file, avatar === 'chibi' ? '/assets/dragon-chibi.png' : '/assets/dragon-girl.png');
       assert.equal(info.corner, 0); assert.ok(info.body > 240);
-      for (const height of [851, 728]) {
-        await page.setViewportSize({ width: 390, height });
+      for (const height of [1080, 900]) {
+        await page.setViewportSize({ width: 1080, height });
         const panel = await page.locator('#popover').boundingBox(), character = await page.locator('#character').boundingBox();
         assert.ok(panel.x >= 0 && panel.y >= 0 && panel.y + panel.height <= height);
-        assert.ok(character.x >= 0 && character.y >= 0 && character.x + character.width <= 390 && character.y + character.height <= height);
-        const speech = await page.locator('#speech').boundingBox();
-        assert.ok(panel.y + panel.height <= speech.y + 1, 'the character and speech must not obscure quota data');
+        assert.ok(character.x >= 0 && character.y >= 0 && character.x + character.width <= 1080 && character.y + character.height <= height);
+        assert.equal(character.width, avatar === 'chibi' ? 630 : 480);
+        assert.equal(character.height, avatar === 'chibi' ? 810 : 720);
+        assert.ok(panel.x + panel.width <= character.x || character.x + character.width <= panel.x || panel.y + panel.height <= character.y || character.y + character.height <= panel.y);
+        assert.equal(await page.locator('#speech').evaluate(el => getComputedStyle(el).visibility), 'hidden');
       }
       await page.screenshot({ path: path.join(output, `pet-${avatar}.png`), omitBackground: true });
       await page.evaluate(() => pushHidden());
@@ -102,7 +105,7 @@ test('both character images have transparent backgrounds and remain within narro
     assert.deepEqual(errors, []);
   } finally { await page.close(); }
 });
-test('settings switch dark theme, both avatars and scale, and offer no minimize or exit button', async () => {
+test('settings switch dark theme and avatars, allow 300% scale and provide a real exit action', async () => {
   const { page, errors } = await load('settings.html');
   try {
     await page.locator('#dark-theme').check(); assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
@@ -112,10 +115,12 @@ test('settings switch dark theme, both avatars and scale, and offer no minimize 
     assert.ok((await page.locator('[data-character]').getAttribute('src')).endsWith('dragon-chibi.png'));
     await page.locator('#scale').fill('130'); await page.locator('#scale').dispatchEvent('input'); await page.waitForTimeout(300);
     assert.deepEqual(await page.evaluate(() => calls.filter(call => call[0] === 'settings')), [['settings', { theme: 'dark' }], ['settings', { avatar: 'original' }], ['settings', { avatar: 'chibi' }], ['settings', { scale: 1.3 }]]);
-    assert.equal(await page.locator('#minimize-pet').count(), 0); assert.equal(await page.locator('#exit-pet').count(), 0);
+    assert.equal(await page.locator('#minimize-pet').count(), 0); assert.equal(await page.locator('#exit-pet').count(), 1);
+    assert.equal(await page.locator('#scale').getAttribute('max'), '300');
     await page.evaluate(() => { window.scrollTo(0, 0); document.getElementById('toast').hidden = true; });
     await page.screenshot({ path: path.join(output, 'settings-dark.png'), fullPage: true });
     await page.keyboard.press('Escape'); assert.ok(await page.evaluate(() => calls.some(call => call[0] === 'action' && call[1] === 'hide')));
+    await page.locator('#exit-pet').click(); assert.ok(await page.evaluate(() => calls.some(call => call[0] === 'action' && call[1] === 'quit')));
     assert.deepEqual(errors, []);
   } finally { await page.close(); }
 });
@@ -155,5 +160,28 @@ test('settings fit a narrow window, startup remains disabled in development, lig
     assert.deepEqual(errors, []); await page.setViewportSize({ width: 1000, height: 800 });
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({ path: path.join(output, 'settings-light.png'), fullPage: true });
+  } finally { await page.close(); }
+});
+
+test('wheel over the character scales within 65–300%; quota scrolling does not resize the pet', async () => {
+  const state = fixture(); state.settings.scale = 2.95;
+  const { page, errors } = await load('pet.html', state, { width: 1080, height: 1080 });
+  try {
+    await page.locator('#character').dispatchEvent('wheel', { deltaY: -100 });
+    await page.waitForFunction(() => document.getElementById('character').getBoundingClientRect().width === 630);
+    assert.equal((await page.locator('#character').boundingBox()).width, 630);
+    await page.locator('#character').dispatchEvent('wheel', { deltaY: -100 });
+    await page.waitForFunction(() => calls.filter(call => call[0] === 'scale').length === 2);
+    assert.equal(await page.evaluate(() => mori.getState().then(state => state.settings.scale)), 3);
+    await page.locator('#character').dispatchEvent('wheel', { deltaY: 100 });
+    await page.waitForFunction(() => document.getElementById('character').getBoundingClientRect().width === 619.5);
+    const small = fixture(); small.settings.scale = .65; await page.evaluate(next => pushState(next), small);
+    await page.locator('#character').dispatchEvent('wheel', { deltaY: 100 });
+    await page.waitForFunction(() => calls.filter(call => call[0] === 'scale').length === 4);
+    assert.equal(await page.evaluate(() => mori.getState().then(state => state.settings.scale)), .65);
+    await page.locator('#nameplate').click(); await page.locator('#popover').dispatchEvent('wheel', { deltaY: 120 });
+    await page.waitForTimeout(120);
+    assert.equal(await page.evaluate(() => calls.filter(call => call[0] === 'scale').length), 4);
+    assert.deepEqual(errors, []);
   } finally { await page.close(); }
 });

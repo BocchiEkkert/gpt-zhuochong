@@ -1,10 +1,10 @@
-# Mori 本机数据接口 v1
+# Miko 本机数据接口 v1
 
 接口用于可信工具上报它们**实际掌握的数据**，不会自动赋予获取官方额度的能力。Codex 官方额度请使用设置中的「Codex 自动读取」。
 
 ## 连接
 
-1. 启动 Mori，在设置中选择「本机接口」数据源，展开本机接口说明并确认接口就绪。推送数据本身不会切换当前来源。
+1. 启动 Miko，在设置中选择「本机接口」数据源，展开本机接口说明并确认接口就绪。推送数据本身不会切换当前来源。
 2. 点击「复制连接密钥」，安全提供给自己的本机程序。
 3. 只使用 `http://127.0.0.1:47831`，每次请求附带 `Authorization: Bearer <密钥>`。
 
@@ -36,7 +36,7 @@
 PowerShell 示例（使用自己可信数据替换数值；密钥通过安全输入读取，不写入历史记录）：
 
 ```powershell
-$secureToken = Read-Host 'Mori 连接密钥' -AsSecureString
+$secureToken = Read-Host 'Miko 连接密钥' -AsSecureString
 $credential = New-Object System.Net.NetworkCredential('', $secureToken)
 $headers = @{ Authorization = 'Bearer ' + $credential.Password }
 $body = @{

@@ -1,5 +1,5 @@
 'use strict';
-window.MoriView = {
+window.MikoView = {
   source: source => ({ manual: '手动录入', connector: '本机接口', codex: 'Codex 官方', codexLocal: '本机任务事件', accessibility: '界面检测', unknown: '未连接' })[source] || '未连接',
   number: value => value === null || value === undefined ? '—' : new Intl.NumberFormat('zh-CN').format(value),
   clock: value => value ? new Date(value).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : '尚未更新',

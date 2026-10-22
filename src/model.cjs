@@ -33,14 +33,17 @@ function validateSettings(input) {
   const out = {};
   for (const [key, value] of Object.entries(input)) {
     if (key === 'scale') {
-      if (!Number.isFinite(value) || value < 0.65 || value > 1.6) fail('大小应在 65%–160% 之间');
+      if (!Number.isFinite(value) || value < 0.65 || value > 3) fail('大小应在 65%–300% 之间');
     } else if (['avatar', 'theme', 'dataSource'].includes(key)) {
       const choices = { avatar: ['original', 'chibi'], theme: ['light', 'dark'], dataSource: ['codex', 'manual', 'connector'] };
       if (!choices[key].includes(value)) fail(`${key} 选项无效`);
     } else if (key === 'codexExecutable') {
       if (typeof value !== 'string' || value.length > 4096 || /[\u0000-\u001f]/.test(value)) fail('Codex 程序路径无效');
     } else if (key === 'position') {
-      if (value !== null && (!object(value) || !Number.isFinite(value.x) || !Number.isFinite(value.y))) fail('窗口坐标无效');
+      if (value !== null) {
+        onlyKeys(value, ['x', 'y', 'anchor'], '窗口坐标');
+        if (!Number.isFinite(value.x) || !Number.isFinite(value.y) || (value.anchor !== undefined && value.anchor !== 'character')) fail('窗口坐标无效');
+      }
     } else if (typeof value !== 'boolean') fail(`${key} 必须是布尔值`);
     out[key] = value;
   }

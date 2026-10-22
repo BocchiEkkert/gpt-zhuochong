@@ -3,7 +3,7 @@
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 $apps = @(Get-Process -Name 'Codex','ChatGPT' -ErrorAction SilentlyContinue)
-# Invisible CLI app-server helpers started by Mori never count as an open desktop client.
+# Invisible CLI app-server helpers started by Miko never count as an open desktop client.
 $apps = @($apps | Where-Object { $_.MainWindowHandle -ne 0 })
 $result = @{ running = ($apps.Count -gt 0); status = 'unknown'; available = $false; appName = $null; cliPath = $null }
 if ($apps.Count -gt 0) { $result.appName = ($apps | Select-Object -First 1).ProcessName }

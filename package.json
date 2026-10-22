@@ -1,7 +1,7 @@
 {
-  "name": "gpt-mori-pet",
-  "version": "0.3.0",
-  "description": "Mori · Codex 双形象桌面伙伴",
+  "name": "gpt-miko-pet",
+  "version": "0.4.0",
+  "description": "Miko · Codex 双形象桌面伙伴",
   "private": true,
   "main": "src/main.cjs",
   "engines": {
@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "electron .",
-    "test": "node --test tests/model.test.cjs tests/bridge.test.cjs tests/monitor.test.cjs tests/codex.test.cjs",
+    "test": "node --test tests/model.test.cjs tests/bridge.test.cjs tests/monitor.test.cjs tests/codex.test.cjs tests/pet-layout.test.cjs",
     "test:ui": "node --test tests/ui.test.cjs",
     "test:desktop": "node tests/desktop-smoke.cjs",
     "dist:win": "electron-builder --win zip --x64",
@@ -24,7 +24,7 @@
   },
   "build": {
     "appId": "io.mori.gptpet",
-    "productName": "Mori GPT Pet",
+    "productName": "Miko GPT Pet",
     "asar": true,
     "directories": {
       "output": "dist"
@@ -44,7 +44,7 @@
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "shortcutName": "Mori 桌宠",
+      "shortcutName": "Miko 桌宠",
       "include": "build/installer.nsh"
     },
     "extraResources": [
@@ -59,7 +59,7 @@
     "toolsets": {
       "wine": "1.0.1"
     },
-    "artifactName": "Mori-GPT-Pet-${version}-${arch}.${ext}"
+    "artifactName": "Miko-GPT-Pet-${version}-${arch}.${ext}"
   },
-  "author": "Mori contributors"
+  "author": "Miko contributors"
 }

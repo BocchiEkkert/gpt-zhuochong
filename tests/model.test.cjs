@@ -37,7 +37,7 @@ test('invalid, unexpected and nonfinite inputs are rejected', () => {
     { task: { status: 'success' } }, { task: { status: 'idle', label: 'x'.repeat(101) } },
     { settings: { scale: 1 } }, { weekly: { remainingPercent: 50, secret: 'x' } }];
   for (const value of invalid) assert.throws(() => applyUpdate(initialState(date), value, 'connector', date));
-  assert.throws(() => validateSettings({ scale: 2 }));
+  assert.throws(() => validateSettings({ scale: 3.01 }));
   assert.throws(() => validateSettings({ followChatGPT: 'yes' }));
   assert.throws(() => validateSettings({ position: { x: NaN, y: 10 } }));
 });
