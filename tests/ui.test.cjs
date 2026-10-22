@@ -91,6 +91,12 @@ test('both character images retain true 300% size and keep the quota panel reada
       assert.equal(info.corner, 0); assert.ok(info.body > 240);
       for (const height of [1080, 900]) {
         await page.setViewportSize({ width: 1080, height });
+        await page.waitForFunction(height => {
+          const character = document.getElementById('character').getBoundingClientRect();
+          const panel = document.getElementById('popover').getBoundingClientRect();
+          return character.x >= 0 && character.y >= 0 && character.right <= innerWidth && character.bottom <= height
+            && panel.x >= 0 && panel.y >= 0 && panel.bottom <= height;
+        }, height);
         const panel = await page.locator('#popover').boundingBox(), character = await page.locator('#character').boundingBox();
         assert.ok(panel.x >= 0 && panel.y >= 0 && panel.y + panel.height <= height);
         assert.ok(character.x >= 0 && character.y >= 0 && character.x + character.width <= 1080 && character.y + character.height <= height);
