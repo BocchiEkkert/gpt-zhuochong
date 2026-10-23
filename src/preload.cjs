@@ -2,6 +2,13 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('mori', Object.freeze({
   getState: () => ipcRenderer.invoke('state:get'),
+  panel: input => ipcRenderer.invoke('pet:panel', input),
+  phraseFile: input => ipcRenderer.invoke('phrases:file', input),
+  motionEnded: () => ipcRenderer.send('pet:motion-ended'),
+  onMotion: callback => {
+    const listener = (_event, name) => callback(name); ipcRenderer.on('pet:motion', listener);
+    return () => ipcRenderer.removeListener('pet:motion', listener);
+  },
   scalePet: steps => ipcRenderer.invoke('pet:scale', steps),
   saveSettings: patch => ipcRenderer.invoke('settings:save', patch),
   saveUsage: update => ipcRenderer.invoke('usage:save', update),

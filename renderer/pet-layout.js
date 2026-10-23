@@ -21,40 +21,22 @@
     }
     return { x: axis(position.x, area.x, area.width, size.width), y: axis(position.y, area.y, area.height, size.height) };
   }
-  function overlap(a, b) {
-    return Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x)) *
-      Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
-  }
-  function fit(rect, area) {
-    return { ...rect, x: clamp(rect.x, area.x + 8, area.x + area.width - rect.width - 8),
-      y: clamp(rect.y, area.y + 8, area.y + area.height - rect.height - 8) };
-  }
   function calculate(settings, position, area) {
     const size = dimensions(settings), point = clampCharacter(position, size, area);
     const character = { ...point, ...size };
-    const center = character.x + character.width / 2, bottom = character.y + character.height;
-    const speechWidth = Math.min(240, area.width - 16);
-    const speech = fit({ x: center - speechWidth / 2, y: character.y - 42, width: speechWidth, height: 34 }, area);
-    if (character.y - 42 < area.y && bottom + 42 <= area.y + area.height) speech.y = bottom + 8;
-    const nameplate = fit({ x: center - 80, y: bottom + 4, width: Math.min(160, area.width - 16), height: 28 }, area);
-    const width = Math.min(350, area.width - 16), height = Math.min(330, area.height - 16);
-    const candidates = [
-      { x: center - width / 2, y: character.y - height - 12, width, height },
-      { x: center - width / 2, y: bottom + 44, width, height },
-      { x: character.x - width - 12, y: character.y, width, height },
-      { x: character.x + character.width + 12, y: character.y, width, height },
-    ].map(rect => fit(rect, area));
-    let popover = candidates[0], penalty = Infinity;
-    for (const candidate of candidates) {
-      const score = overlap(candidate, character) + overlap(candidate, nameplate);
-      if (score < penalty) { popover = candidate; penalty = score; }
-    }
-    const rects = [character, speech, nameplate, popover], margin = 16;
-    const x = Math.floor(Math.min(...rects.map(rect => rect.x))) - margin;
-    const y = Math.floor(Math.min(...rects.map(rect => rect.y))) - margin;
-    const right = Math.ceil(Math.max(...rects.map(rect => rect.x + rect.width))) + margin;
-    const lower = Math.ceil(Math.max(...rects.map(rect => rect.y + rect.height))) + margin;
-    return { character, speech, nameplate, popover, area: { ...area }, bounds: { x, y, width: right - x, height: lower - y } };
+    const center = character.x + character.width / 2;
+    // Independent windows stay above the character; offscreen coordinates are deliberate.
+    const speech = { x: center - 130, y: character.y - 70, width: 260, height: 58 };
+    const popover = { x: center - 175, y: character.y - 342, width: 350, height: 330 };
+    const nameplate = { x: clamp(center - 80, area.x, area.x + area.width - 160),
+      y: clamp(character.y + character.height + 4, area.y, area.y + area.height - 28), width: 160, height: 28 };
+    // Only reserve space for the sprite's motion and its nameplate, never for a popup.
+    const margin = Math.ceil(24 * settings.scale);
+    const x = Math.floor(Math.min(character.x - margin, nameplate.x));
+    const y = Math.floor(character.y - margin);
+    const right = Math.ceil(Math.max(character.x + size.width + margin, nameplate.x + 160));
+    const bottom = Math.ceil(Math.max(character.y + size.height + margin, nameplate.y + 28));
+    return { character, speech, nameplate, popover, area: { ...area }, bounds: { x, y, width: right - x, height: bottom - y } };
   }
   function scaleAround(position, previous, next, pivot) {
     const factor = next / previous;

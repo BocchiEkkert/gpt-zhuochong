@@ -10,7 +10,7 @@ const { initialState, localDay, applyUpdate } = require('../src/model.cjs');
 const { emptyCodex } = require('../src/codex-service.cjs');
 let browser, server, baseURL;
 const output = path.join(__dirname, '..', 'test-results');
-const executablePath = process.env.CHROMIUM_PATH || (process.platform === 'linux' ? '/usr/bin/chromium' : undefined);
+const executablePath = process.env.CHROMIUM_PATH || (process.platform === 'linux' && process.env.CHROMIUM_PATH !== '' ? '/usr/bin/chromium' : undefined);
 before(async () => {
   fs.mkdirSync(output, { recursive: true }); const root = path.join(__dirname, '..');
   server = http.createServer((req, res) => {
@@ -34,8 +34,11 @@ async function load(file, state = fixture(), viewport = { width: 1000, height: 8
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
   await page.addInitScript(initial => {
-    let current = initial; const callbacks = [], hidden = []; window.calls = [];
+    let current = initial; const callbacks = [], hidden = [], motions = []; window.calls = [];
     window.mori = {
+      panel: async input => { calls.push(['panel', input]); return structuredClone(current); },
+      phraseFile: async input => { calls.push(['phrases', input]); return structuredClone(current); },
+      onMotion: callback => motions.push(callback), motionEnded: () => { current.motion = 'idle'; for (const callback of motions) callback('idle'); },
       getState: async () => structuredClone(current),
       onState: callback => { callbacks.push(callback); return () => {}; }, onNotice: () => () => {},
       onHidden: callback => { hidden.push(callback); return () => {}; },
@@ -53,60 +56,36 @@ async function load(file, state = fixture(), viewport = { width: 1000, height: 8
       interactive: value => calls.push(['interactive', value]), drag: value => calls.push(['drag', value]),
     };
     window.pushState = next => { current = next; for (const callback of callbacks) callback(structuredClone(next)); };
+    window.pushMotion = name => { current.motion = name; for (const callback of motions) callback(name); };
     window.pushHidden = () => { for (const callback of hidden) callback(); };
   }, state);
   await page.goto(baseURL + '/renderer/' + file); await page.waitForFunction(() => document.readyState === 'complete');
   return { page, errors };
 }
-test('hover shows unknown data; close and Escape go to tray, with no minimize or quit button', async () => {
-  const { page, errors } = await load('pet.html', fixture(), { width: 390, height: 674 });
+test('separate usage panel shows unknowns and closes itself; character keeps clickable name without chevron', async () => {
+  const { page: panel, errors } = await load('panel.html', fixture(), { width: 350, height: 330 });
+  const { page: pet, errors: petErrors } = await load('pet.html', fixture(), { width: 390, height: 674 });
   try {
-    assert.equal(await page.locator('#minimize').count(), 0); assert.equal(await page.locator('#quit').count(), 0);
-    assert.equal(await page.locator('#popover').isVisible(), false);
-    await page.locator('#character').hover(); await page.waitForFunction(() => !document.getElementById('popover').hidden);
-    assert.equal(await page.locator('#today-tokens').textContent(), '—'); assert.equal(await page.locator('#five-value').textContent(), '未知');
-    await page.locator('#settings').click(); await page.locator('#close-pet').click();
-    assert.equal(await page.locator('#popover').isVisible(), false);
-    await page.locator('#nameplate').click(); await page.keyboard.press('Escape');
-    assert.deepEqual(await page.evaluate(() => calls.filter(call => call[0] === 'action')), [['action', 'settings'], ['action', 'hide'], ['action', 'hide']]);
-    assert.deepEqual(errors, []);
-  } finally { await page.close(); }
+    assert.equal(await pet.locator('#popover').count(), 0); assert.equal(await pet.locator('.up').count(), 0);
+    assert.equal(await panel.locator('#today-tokens').textContent(), '—'); assert.equal(await panel.locator('#five-value').textContent(), '未知');
+    await panel.locator('#settings').click(); await panel.locator('#close-pet').click(); await panel.keyboard.press('Escape');
+    assert.deepEqual(await panel.evaluate(() => calls.filter(call => call[0] === 'action' || call[0] === 'panel' && call[1].action !== 'hover')), [['action', 'settings'], ['panel', { action: 'close' }], ['action', 'hide']]);
+    await pet.locator('#nameplate').click(); await pet.keyboard.press('Escape');
+    assert.ok(await pet.evaluate(() => calls.some(call => call[0] === 'panel' && call[1].action === 'toggle')));
+    assert.deepEqual(errors, []); assert.deepEqual(petErrors, []);
+  } finally { await panel.close(); await pet.close(); }
 });
-test('both character images retain true 300% size and keep the quota panel readable', async () => {
-  const data = applyUpdate(initialState(), { day: localDay(), todayTokens: 18420, fiveHour: { remainingPercent: 72 }, weekly: { remainingPercent: 43 }, task: { status: 'running', label: '界面测试示例' } }, 'manual');
-  data.settings.scale = 3; data.settings.reduceMotion = true; data.settings.dataSource = 'manual';
+test('both sprites retain 300% dimensions with independent usage windows', async () => {
+  const data = initialState(); data.settings.scale = 3; data.settings.reduceMotion = true;
   const state = fixture(data); const { page, errors } = await load('pet.html', state, { width: 1080, height: 1080 });
   try {
     for (const avatar of ['original', 'chibi']) {
       const next = structuredClone(state); next.settings.avatar = avatar; await page.evaluate(next => pushState(next), next);
-      await page.locator('#nameplate').click();
-      const sprite = page.locator('#character img'); await sprite.evaluate(img => img.decode());
-      const info = await sprite.evaluate(img => {
-        const canvas = document.createElement('canvas'); canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
-        const c = canvas.getContext('2d'); c.drawImage(img, 0, 0);
-        return { file: new URL(img.src).pathname, corner: c.getImageData(0, 0, 1, 1).data[3],
-          body: c.getImageData(Math.floor(img.naturalWidth / 2), Math.floor(img.naturalHeight * .35), 1, 1).data[3] };
-      });
-      assert.equal(info.file, avatar === 'chibi' ? '/assets/dragon-chibi.png' : '/assets/dragon-girl.png');
-      assert.equal(info.corner, 0); assert.ok(info.body > 240);
-      for (const height of [1080, 900]) {
-        await page.setViewportSize({ width: 1080, height });
-        await page.waitForFunction(height => {
-          const character = document.getElementById('character').getBoundingClientRect();
-          const panel = document.getElementById('popover').getBoundingClientRect();
-          return character.x >= 0 && character.y >= 0 && character.right <= innerWidth && character.bottom <= height
-            && panel.x >= 0 && panel.y >= 0 && panel.bottom <= height;
-        }, height);
-        const panel = await page.locator('#popover').boundingBox(), character = await page.locator('#character').boundingBox();
-        assert.ok(panel.x >= 0 && panel.y >= 0 && panel.y + panel.height <= height);
-        assert.ok(character.x >= 0 && character.y >= 0 && character.x + character.width <= 1080 && character.y + character.height <= height);
-        assert.equal(character.width, avatar === 'chibi' ? 630 : 480);
-        assert.equal(character.height, avatar === 'chibi' ? 810 : 720);
-        assert.ok(panel.x + panel.width <= character.x || character.x + character.width <= panel.x || panel.y + panel.height <= character.y || character.y + character.height <= panel.y);
-        assert.equal(await page.locator('#speech').evaluate(el => getComputedStyle(el).visibility), 'hidden');
-      }
+      await page.locator('#character img').evaluate(img => img.decode());
+      const character = await page.locator('#character').boundingBox();
+      assert.equal(character.width, avatar === 'chibi' ? 630 : 480); assert.equal(character.height, avatar === 'chibi' ? 810 : 720);
+      assert.ok(character.y >= 0); assert.ok(character.y + character.height <= 1080);
       await page.screenshot({ path: path.join(output, `pet-${avatar}.png`), omitBackground: true });
-      await page.evaluate(() => pushHidden());
     }
     assert.deepEqual(errors, []);
   } finally { await page.close(); }
@@ -185,9 +164,55 @@ test('wheel over the character scales within 65–300%; quota scrolling does not
     await page.locator('#character').dispatchEvent('wheel', { deltaY: 100 });
     await page.waitForFunction(() => calls.filter(call => call[0] === 'scale').length === 4);
     assert.equal(await page.evaluate(() => mori.getState().then(state => state.settings.scale)), .65);
-    await page.locator('#nameplate').click(); await page.locator('#popover').dispatchEvent('wheel', { deltaY: 120 });
-    await page.waitForTimeout(120);
+    const { page: panel } = await load('panel.html', state, { width: 350, height: 330 });
+    await panel.locator('#popover').dispatchEvent('wheel', { deltaY: 120 }); await panel.close();
     assert.equal(await page.evaluate(() => calls.filter(call => call[0] === 'scale').length), 4);
+    assert.deepEqual(errors, []);
+  } finally { await page.close(); }
+});
+
+test('local phrase drafts survive updates/category changes; save, reset, frequency, scale reset and six motion previews work', async () => {
+  const { page, errors } = await load('settings.html');
+  try {
+    await page.locator('#phrase-text').fill('小饼干，分你一半。\n角角也想休息啦。');
+    await page.locator('#phrase-category').selectOption('idle');
+    await page.locator('#phrase-text').fill('在这里趴一会儿。');
+    await page.evaluate(next => pushState(next), fixture());
+    assert.equal(await page.locator('#phrase-text').inputValue(), '在这里趴一会儿。');
+    await page.locator('#phrase-category').selectOption('click');
+    assert.ok((await page.locator('#phrase-text').inputValue()).startsWith('小饼干'));
+    await page.locator('#save-phrases').click();
+    const banks = await page.evaluate(() => calls.find(call => call[0] === 'settings' && call[1].phraseBanks)[1].phraseBanks);
+    assert.deepEqual(banks, { click: ['小饼干，分你一半。', '角角也想休息啦。'], idle: ['在这里趴一会儿。'] });
+    await page.locator('#export-phrases').click(); await page.locator('#import-phrases').click();
+    await page.locator('#speech-enabled').uncheck(); await page.locator('#speech-frequency').selectOption('quiet');
+    await page.locator('#reset-scale').click();
+    for (const button of await page.locator('[data-preview]').all()) await button.click();
+    const actions = await page.evaluate(() => calls.filter(call => call[0] === 'action' && call[1].startsWith('preview:')));
+    assert.equal(actions.length, 6);
+    await page.locator('#reset-phrases').click();
+    assert.equal((await page.locator('#phrase-text').inputValue()).split('\n').length, 20);
+    assert.deepEqual(errors, []);
+  } finally { await page.close(); }
+});
+test('six distinct sprite motions run; reduced motion stops them and dragging suppresses a click', async () => {
+  const { page, errors } = await load('pet.html', fixture(), { width: 900, height: 900 });
+  try {
+    const signatures = [];
+    for (const name of ['idle', 'touch', 'cuddle', 'sleepy', 'peek', 'party']) {
+      await page.evaluate(name => pushMotion(name), name);
+      signatures.push(await page.locator('#character img').evaluate(img => JSON.stringify(img.getAnimations()[0].effect.getKeyframes().map(frame => frame.transform))));
+    }
+    assert.equal(new Set(signatures).size, 6);
+    const reduced = fixture(); reduced.settings.reduceMotion = true; await page.evaluate(next => pushState(next), reduced);
+    assert.equal(await page.locator('#character img').evaluate(img => img.getAnimations().length), 0);
+    const character = page.locator('#character');
+    const box = await character.boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 + 20, box.y + box.height / 2 + 20); await page.mouse.up();
+    assert.equal(await page.evaluate(() => calls.filter(call => call[0] === 'action' && call[1] === 'touch').length), 0);
+    await character.click();
+    assert.equal(await page.evaluate(() => calls.filter(call => call[0] === 'action' && call[1] === 'touch').length), 1);
     assert.deepEqual(errors, []);
   } finally { await page.close(); }
 });

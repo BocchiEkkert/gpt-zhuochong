@@ -24,7 +24,7 @@ class CodexClient extends EventEmitter {
     this.child.on('error', () => this.fail(new Error('无法启动 Codex 命令行程序')));
     this.child.on('exit', () => this.fail(new Error('Codex 连接已断开')));
     const initialized = await this.request('initialize', {
-      clientInfo: { name: 'miko_desktop_pet', title: 'Miko desktop companion', version: '0.4.0' },
+      clientInfo: { name: 'miko_desktop_pet', title: 'Miko desktop companion', version: require('../package.json').version },
       capabilities: { experimentalApi: false },
     });
     this.notify('initialized');

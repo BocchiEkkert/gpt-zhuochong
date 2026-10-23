@@ -1,5 +1,7 @@
 'use strict';
 const $ = id => document.getElementById(id), api = window.mori, view = window.MikoView;
+const phraseDrafts = new Map();
+let phraseCategory = 'click';
 let state, initialized = false, toastTimer, scaleTimer;
 const dirty = new Set(), fields = ['tokens', 'five-percent', 'five-reset-input', 'week-percent', 'week-reset-input', 'task', 'task-label'];
 const message = error => String(error.message || error).replace(/^Error invoking remote method '[^']+': (?:\w+Error: )?/, '');
@@ -14,12 +16,12 @@ function render(next) {
   $('dark-theme').checked = settings.theme === 'dark';
   $('avatar-original').checked = settings.avatar === 'original'; $('avatar-chibi').checked = settings.avatar === 'chibi';
   $('data-source').value = settings.dataSource;
-  $('login').disabled = next.platform !== 'win32' || !next.packaged;
-  if ($('login').disabled) $('login-note').textContent = '使用打包后的 Windows 程序可开启；源码运行时不修改开机项';
+  $('login').disabled = !['win32', 'linux'].includes(next.platform) || !next.packaged;
+  if ($('login').disabled) $('login-note').textContent = '使用打包后的 Windows / Ubuntu 程序可开启；源码运行时不修改开机项';
   $('connection-dot').classList.toggle('connected', next.codex.status === 'connected');
   $('connection-status').textContent = settings.dataSource !== 'codex' ? (settings.dataSource === 'manual' ? '手动记录模式' : '本机接口模式') : ({ connected: 'Codex 额度已连接', connecting: '正在连接 Codex', missing: '未找到 Codex CLI', signedOut: 'Codex 尚未登录', unsupported: 'Codex 接口不可用', error: 'Codex 连接中断', disabled: '等待 Codex 连接' })[next.codex.status] || '等待 Codex 连接';
   $('hero-bubble').textContent = next.task.status === 'running' ? window.MikoLines.status.busy : window.MikoLines.status.ready;
-  const warnings = [next.platform !== 'win32' ? '当前系统可使用 Codex CLI 读取额度；桌面客户端自动显示功能以 Windows 为目标。' : null, next.warning, next.integration.error].filter(Boolean);
+  const warnings = [next.platform === 'linux' ? 'Linux 使用 X11 / XWayland 定位；GNOME 需要启用托盘扩展。Codex CLI 可读取额度，本机任务可联动显示；客户端进程识别仅支持已知程序名。' : null, next.warning, next.integration.error].filter(Boolean);
   $('platform-notice').textContent = warnings.join(' '); $('platform-notice').hidden = !warnings.length;
   $('codex-status').textContent = next.codex.message;
   $('codex-badge').textContent = next.codex.status === 'connected' ? 'CONNECTED' : 'CODEX';
@@ -40,7 +42,12 @@ function render(next) {
   setField('task', task.source === 'manual' ? task.status : 'unknown'); setField('task-label', task.source === 'manual' ? task.label : '');
   for (const [id, data] of [['tokens-source', recorded], ['five-source', recorded.fiveHour], ['week-source', recorded.weekly]]) $(id).textContent = view.source(data.source) + (data.updatedAt ? ' · ' + view.clock(data.updatedAt) : '');
   $('bridge-status').textContent = next.integration.ready ? `接口已就绪${next.integration.lastEventAt ? ' · 上次同步 ' + view.clock(next.integration.lastEventAt) : ' · 等待工具连接'}` : next.integration.error || '接口启动中';
-  $('copy-token').disabled = !next.integration.ready; initialized = true;
+  $('copy-token').disabled = !next.integration.ready;
+  $('speech-enabled').checked = settings.speechEnabled;
+  for (const [id, key] of [['speech-frequency', 'speechFrequency'], ['speech-order', 'speechOrder'], ['idle-minutes', 'idleMinutes'], ['cooldown-minutes', 'cooldownMinutes'], ['speech-seconds', 'speechSeconds']]) {
+    if (document.activeElement !== $(id)) $(id).value = settings[key];
+  }
+  renderPhrases(); initialized = true;
 }
 api.onState(render); api.onNotice(toast); api.getState().then(render).catch(() => toast('连接桌宠失败，请重启 Miko。'));
 async function saveSettings(patch) { try { render(await api.saveSettings(patch)); toast('设置已保存'); } catch (error) { if (state) render(state); toast(message(error)); } }
@@ -79,3 +86,46 @@ $('exit-pet').addEventListener('click', async () => {
   $('exit-pet').disabled = true;
   try { await api.action('quit'); } catch (error) { $('exit-pet').disabled = false; toast(message(error)); }
 });
+
+function renderPhrases() {
+  const bank = state.settings.phraseBanks[phraseCategory] || window.MikoLines[phraseCategory];
+  const text = phraseDrafts.has(phraseCategory) ? phraseDrafts.get(phraseCategory) : bank.join('\n');
+  if ($('phrase-text').value !== text) $('phrase-text').value = text;
+  $('phrase-count').textContent = `${$('phrase-text').value.split(/\r?\n/).filter(line => line.trim()).length} 条`;
+}
+$('phrase-category').addEventListener('change', () => { phraseCategory = $('phrase-category').value; renderPhrases(); });
+$('phrase-text').addEventListener('input', () => {
+  phraseDrafts.set(phraseCategory, $('phrase-text').value);
+  $('phrase-message').textContent = '有未保存的文案（切换分类会保留草稿）';
+  $('phrase-count').textContent = `${$('phrase-text').value.split(/\r?\n/).filter(line => line.trim()).length} 条`;
+});
+$('save-phrases').addEventListener('click', async () => {
+  const banks = { ...state.settings.phraseBanks };
+  for (const [key, text] of phraseDrafts) {
+    const lines = [...new Set(text.split(/\r?\n/).map(line => line.trim()).filter(Boolean))];
+    if (!lines.length || lines.length > 300 || lines.some(line => line.length > 120)) { toast('每类需 1–300 句，每句最多 120 字'); return; }
+    banks[key] = lines;
+  }
+  try {
+    const next = await api.saveSettings({ phraseBanks: banks }); phraseDrafts.clear(); render(next);
+    $('phrase-message').textContent = '文案已保存，更新程序后也会保留。'; toast('文案已保存');
+  } catch (error) { toast(message(error)); }
+});
+$('reset-phrases').addEventListener('click', async () => {
+  const banks = { ...state.settings.phraseBanks }; delete banks[phraseCategory];
+  try {
+    const next = await api.saveSettings({ phraseBanks: banks }); phraseDrafts.delete(phraseCategory); render(next);
+    $('phrase-message').textContent = '本类已恢复默认文案。';
+  } catch (error) { toast(message(error)); }
+});
+for (const [id, action] of [['import-phrases', 'import'], ['export-phrases', 'export']]) $(id).addEventListener('click', async () => {
+  if (phraseDrafts.size) { toast('请先保存文案，或恢复当前分类默认文案后再导入、导出'); return; }
+  try { render(await api.phraseFile({ action, category: phraseCategory })); } catch (error) { toast(message(error)); }
+});
+$('speech-enabled').addEventListener('change', () => saveSettings({ speechEnabled: $('speech-enabled').checked }));
+for (const [id, key] of [['speech-frequency', 'speechFrequency'], ['speech-order', 'speechOrder'], ['idle-minutes', 'idleMinutes'], ['cooldown-minutes', 'cooldownMinutes'], ['speech-seconds', 'speechSeconds']]) $(id).addEventListener('change', () => {
+  if ($(id).type === 'number' && !$(id).reportValidity()) return;
+  saveSettings({ [key]: $(id).type === 'number' ? Number($(id).value) : $(id).value });
+});
+$('reset-scale').addEventListener('click', () => { clearTimeout(scaleTimer); saveSettings({ scale: 1 }); });
+for (const button of document.querySelectorAll('[data-preview]')) button.addEventListener('click', () => api.action(`preview:${button.dataset.preview}`));

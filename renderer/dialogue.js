@@ -1,6 +1,6 @@
 'use strict';
-// Local copy for Miko. New motion and idle scheduling remain in the review prototype.
-window.MikoLines = Object.freeze({
+// Shared local phrase bank. No network or model calls.
+const lines = Object.freeze({
   click: Object.freeze([
     "嗯？你叫我呀。",
     "在呢在呢。",
@@ -140,3 +140,6 @@ window.MikoLines = Object.freeze({
       "connectionError": "没连上，去设置看看呀。"
   }),
 });
+
+if (typeof module === 'object' && module.exports) module.exports = lines;
+else window.MikoLines = lines;

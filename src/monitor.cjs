@@ -11,14 +11,19 @@ function parseObservation(text) {
 class DesktopMonitor {
   constructor(onChange, platform = process.platform, scriptPath = path.join(__dirname, 'windows', 'observe.ps1')) {
     this.onChange = onChange; this.platform = platform; this.scriptPath = scriptPath; this.busy = false; this.stopped = false;
-    this.state = { running: false, status: 'unknown', available: false, supported: platform === 'win32', checkedAt: null, error: null };
+    this.state = { running: false, status: 'unknown', available: false, supported: ['win32', 'linux'].includes(platform), checkedAt: null, error: null };
   }
   start() {
-    if (this.platform !== 'win32') { this.onChange(this.state); return; }
+    if (!['win32', 'linux'].includes(this.platform)) { this.onChange(this.state); return; }
     this.poll(); this.timer = setInterval(() => this.poll(), 5000);
   }
   poll() {
     if (this.busy || this.stopped) return;
+    if (this.platform === 'linux') {
+      try { this.state = require('./linux-desktop.cjs').observeLinux(); }
+      catch { this.state = { ...this.state, supported: false, checkedAt: null, error: '当前系统无法读取桌面进程；仍可通过 Codex 本机任务联动。' }; }
+      this.onChange(this.state); return;
+    }
     this.busy = true;
     let script;
     try { script = fs.readFileSync(this.scriptPath, 'utf8').replace(/^\uFEFF/, ''); }

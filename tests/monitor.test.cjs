@@ -10,7 +10,7 @@ test('only valid process and button observations become task states', () => {
 });
 test('unsupported systems explicitly report unsupported without launching PowerShell', () => {
   let observed;
-  const monitor = new DesktopMonitor(state => { observed = state; }, 'linux');
+  const monitor = new DesktopMonitor(state => { observed = state; }, 'darwin');
   monitor.start();
   assert.equal(observed.supported, false);
   assert.equal(observed.status, 'unknown');

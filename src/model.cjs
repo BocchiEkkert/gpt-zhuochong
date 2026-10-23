@@ -5,6 +5,8 @@ const DEFAULT_SETTINGS = Object.freeze({
   scale: 1, alwaysOnTop: true, followCodex: true,
   avatar: 'chibi', theme: 'light', dataSource: 'codex', codexExecutable: '',
   startAtLogin: false, reduceMotion: false, position: null,
+  speechEnabled: true, speechFrequency: 'normal', speechOrder: 'random', idleMinutes: 3,
+  cooldownMinutes: 20, speechSeconds: 6, phraseBanks: {},
 });
 
 function localDay(date = new Date()) {
@@ -37,6 +39,21 @@ function validateSettings(input) {
     } else if (['avatar', 'theme', 'dataSource'].includes(key)) {
       const choices = { avatar: ['original', 'chibi'], theme: ['light', 'dark'], dataSource: ['codex', 'manual', 'connector'] };
       if (!choices[key].includes(value)) fail(`${key} 选项无效`);
+    } else if (key === 'speechFrequency') {
+      if (!['quiet', 'normal', 'lively'].includes(value)) fail('发言频率无效');
+    } else if (key === 'speechOrder') {
+      if (!['random', 'sequential'].includes(value)) fail('文案顺序无效');
+    } else if (['idleMinutes', 'cooldownMinutes', 'speechSeconds'].includes(key)) {
+      const ranges = { idleMinutes: [1, 120], cooldownMinutes: [5, 240], speechSeconds: [3, 20] };
+      if (!Number.isInteger(value) || value < ranges[key][0] || value > ranges[key][1]) fail(`${key} 超出允许范围`);
+    } else if (key === 'phraseBanks') {
+      onlyKeys(value, ['click', 'idle', 'affection', 'sleepy', 'welcome', 'cheer'], '文案分类');
+      let count = 0;
+      for (const bank of Object.values(value)) {
+        if (!Array.isArray(bank) || !bank.length || bank.length > 300 || bank.some(line => typeof line !== 'string' || !line.trim() || line.length > 120 || /[\u0000-\u001f]/.test(line))) fail('每类文案为 1–300 条，每条 1–120 字，不能包含换行或控制字符');
+        count += bank.length;
+      }
+      if (count > 1000) fail('自定义文案合计不能超过 1000 条');
     } else if (key === 'codexExecutable') {
       if (typeof value !== 'string' || value.length > 4096 || /[\u0000-\u001f]/.test(value)) fail('Codex 程序路径无效');
     } else if (key === 'position') {

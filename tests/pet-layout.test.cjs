@@ -26,18 +26,18 @@ test('both full-size characters reach every desktop corner without reserving pop
       assert.equal(result.character.x, x); assert.equal(result.character.y, y);
       assert.equal(result.character.width, avatar === 'chibi' ? 630 : 480);
       assert.equal(result.character.height, avatar === 'chibi' ? 810 : 720);
-      assert.ok(inside(result.popover, area)); assert.ok(inside(result.nameplate, area));
+      assert.equal(result.popover.y + result.popover.height, result.character.y - 12); assert.ok(inside(result.nameplate, area));
       const a = result.popover, b = result.character;
       assert.ok(a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y);
     }
   }
 });
-test('negative monitor coordinates and oversized pets remain reachable, with readable popup bounds', () => {
+test('negative monitor coordinates and oversized pets remain reachable, while independent panels may extend offscreen', () => {
   const secondary = { x: -1280, y: -120, width: 1280, height: 720 };
   const settings = { avatar: 'chibi', scale: 3 };
   for (const point of [{ x: -5000, y: -5000 }, { x: 5000, y: 5000 }]) {
     const result = geometry.calculate(settings, point, secondary);
-    assert.ok(inside(result.popover, secondary));
+    assert.equal(result.popover.y + result.popover.height, result.character.y - 12);
     assert.ok(result.character.x >= -1280 && result.character.x + 630 <= 0);
     assert.ok(result.character.y >= -210 && result.character.y <= -120);
   }
@@ -45,7 +45,7 @@ test('negative monitor coordinates and oversized pets remain reachable, with rea
   const result = geometry.calculate(settings, { x: 10000, y: -10000 }, tiny);
   assert.equal(result.character.width, 630); assert.equal(result.character.height, 810);
   assert.equal(result.character.x, 0); assert.equal(result.character.y, -210);
-  assert.ok(inside(result.popover, tiny));
+  assert.equal(result.popover.y + result.popover.height, result.character.y - 12);
 });
 test('new character anchors persist directly and old outer-window positions are migrated', () => {
   const old = geometry.restorePosition({ avatar: 'chibi', scale: 1, position: { x: 100, y: 80 } }, area);
@@ -65,4 +65,11 @@ test('closing before the first monitor reply stays in tray until the client stop
   decision = followVisibility({ running: true, previousRunning: false, dismissed: decision.dismissed });
   assert.equal(decision.show, true);
   assert.equal(followVisibility({ running: true, previousRunning: null, dismissed: false, background: true }).show, true);
+});
+
+test('top edge keeps character in place and permits negative independent panel and speech coordinates', () => {
+  const layout = geometry.calculate({ avatar: 'chibi', scale: 1 }, { x: 0, y: 0 }, area);
+  assert.deepEqual({ x: layout.character.x, y: layout.character.y }, { x: 0, y: 0 });
+  assert.equal(layout.popover.y, -342); assert.equal(layout.speech.y, -70);
+  assert.ok(layout.bounds.height < layout.character.height + 100, 'native character window reserves no popup space');
 });
