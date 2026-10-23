@@ -14,7 +14,7 @@ jobs:
       - name: Install Ubuntu desktop test and package dependencies
         run: |
           apt-get update
-          apt-get install -y git ca-certificates curl python3 xvfb xauth fakeroot dpkg binutils libcrypt1 libglib2.0-0t64 libnss3 libatk1.0-0t64 libatk-bridge2.0-0t64 libdrm2 libgtk-3-0t64 libgbm1 libasound2t64 libx11-xcb1 libsecret-1-0 libnotify4 libxtst6 libxss1 libxrandr2 libxdamage1 libxcomposite1 libxfixes3 libxkbcommon0 libxcb1 libcups2t64 libxshmfence1 fonts-noto-cjk
+          apt-get install -y git ca-certificates curl python3 xvfb xauth fakeroot dpkg binutils libcrypt1 xz-utils libglib2.0-0t64 libnss3 libatk1.0-0t64 libatk-bridge2.0-0t64 libdrm2 libgtk-3-0t64 libgbm1 libasound2t64 libx11-xcb1 libsecret-1-0 libnotify4 libxtst6 libxss1 libxrandr2 libxdamage1 libxcomposite1 libxfixes3 libxkbcommon0 libxcb1 libcups2t64 libxshmfence1 fonts-noto-cjk
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
