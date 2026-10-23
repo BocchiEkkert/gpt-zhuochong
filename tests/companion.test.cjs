@@ -21,6 +21,7 @@ test('120 unique local phrases; custom banks validate, persist, and sequential/r
   assert.equal(engine.interact(settings, 'click', 5000).motion, 'touch');
   assert.equal(engine.interact(settings, 'click', 5100), null);
   for (const phraseBanks of [{ bad: ['a'] }, { click: [] }, { click: ['a\nb'] }, { click: ['x'.repeat(121)] }, { click: Array(301).fill('x') }]) assert.throws(() => validateSettings({ phraseBanks }));
+  assert.throws(() => validateSettings({ phraseBanks: { click: Array(300).fill('a'), idle: Array(300).fill('b'), affection: Array(300).fill('c'), sleepy: Array(100).fill('d') } }), /1000/);
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'miko-copy-'));
   try {
     new Store(dir).settings({ phraseBanks: settings.phraseBanks, speechFrequency: 'quiet', speechEnabled: false });

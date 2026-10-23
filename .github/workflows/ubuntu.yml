@@ -5,7 +5,9 @@ permissions:
 jobs:
   test-and-package:
     runs-on: ubuntu-latest
-    container: ubuntu:26.04
+    container:
+      image: ubuntu:26.04
+      options: --shm-size=1g
     env:
       MORI_TEST_NO_SANDBOX: '1'
     steps:
@@ -35,6 +37,10 @@ jobs:
           apt-get install -y ./dist/*.deb
           dpkg-query -W gpt-miko-pet
           test -x '/opt/Miko GPT Pet/gpt-miko-pet'
+      - name: Test installed Ubuntu package
+        env:
+          MIKO_TEST_EXECUTABLE: /opt/Miko GPT Pet/gpt-miko-pet
+        run: xvfb-run -a node scripts/ci-check.cjs tests/desktop-smoke.cjs
       - name: Save Ubuntu DEB download
         uses: actions/upload-artifact@v4
         with:

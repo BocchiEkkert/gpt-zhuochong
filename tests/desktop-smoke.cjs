@@ -14,6 +14,15 @@ async function waitForState(page, predicate) {
   } while (Date.now() < deadline);
   throw new Error('Expected desktop state did not arrive');
 }
+async function waitForVisibility(instance, file, expected) {
+  const deadline = Date.now() + 15000;
+  while (Date.now() < deadline) {
+    const visible = await instance.evaluate(({ BrowserWindow }, file) => BrowserWindow.getAllWindows().find(win => win.webContents.getURL().endsWith('/' + file)).isVisible(), file);
+    if (visible === expected) return;
+    await new Promise(resolve => setTimeout(resolve, 25));
+  }
+  throw new Error('Window visibility did not settle: ' + file + ' expected ' + expected);
+}
 async function waitForPage(instance, file) {
   const deadline = Date.now() + 15000;
   while (Date.now() < deadline) {
@@ -96,10 +105,12 @@ async function waitForPage(instance, file) {
     const copy = JSON.parse(fs.readFileSync(exported, 'utf8'));
     assert.equal(copy.version, 1); assert.equal(Object.keys(copy.phraseBanks).length, 6); assert.equal(copy.phraseBanks.click.length, 20);
     assert.deepEqual(Object.keys(copy), ['version', 'phraseBanks']);
-    fs.writeFileSync(imported, 'x'.repeat(256 * 1024 + 1));
-    await assert.rejects(() => settings.evaluate(() => mori.phraseFile({ action: 'import', category: 'idle' })), /256 KB/);
+    fs.writeFileSync(imported, 'x'.repeat(1024 * 1024 + 1));
+    await assert.rejects(() => settings.evaluate(() => mori.phraseFile({ action: 'import', category: 'idle' })), /1 MB/);
     assert.equal(await pet.evaluate(() => mori.getState().then(state => state.settings.phraseBanks.idle.length)), 2);
     await instance.evaluate(({ dialog }) => { dialog.showOpenDialog = globalThis.mikoTestDialogs.open; dialog.showSaveDialog = globalThis.mikoTestDialogs.save; });
+    // Use a visible panel to verify native keyboard focus; offscreen placement is tested separately.
+    await settings.evaluate(() => mori.saveSettings({ scale: .65 })); await pet.evaluate(() => mori.action('reset-position'));
     // Each close/Escape affects only the corresponding auxiliary window; the pet stays visible.
     await pet.evaluate(() => mori.panel({ action: 'toggle' }));
     const visible = file => instance.evaluate(({ BrowserWindow }, file) => BrowserWindow.getAllWindows().find(win => win.webContents.getURL().endsWith('/' + file)).isVisible(), file);
@@ -109,13 +120,16 @@ async function waitForPage(instance, file) {
     assert.equal(await visible('panel.html'), false); assert.equal(await petVisible(instance), true);
     assert.deepEqual(await pet.evaluate(() => mori.getState().then(state => state.layout.character)), anchor);
     assert.equal((await fetch('http://127.0.0.1:47831/v1/health', { headers })).status, 200);
-    await pet.evaluate(() => mori.panel({ action: 'toggle' })); await panel.keyboard.press('Escape');
+    await pet.evaluate(() => mori.panel({ action: 'toggle' }));
+    await panel.waitForFunction(() => document.hasFocus()); await panel.keyboard.press('Escape');
+    await waitForVisibility(instance, 'panel.html', false);
     assert.equal(await visible('panel.html'), false); assert.equal(await petVisible(instance), true);
     await instance.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().find(win => win.webContents.getURL().endsWith('/settings.html')).close());
     assert.equal(settings.isClosed(), false); assert.equal(await visible('settings.html'), false); assert.equal(await petVisible(instance), true);
     await pet.evaluate(() => mori.panel({ action: 'toggle' }));
     await pet.evaluate(() => mori.action('settings')); await settings.waitForFunction(() => document.hasFocus());
     await settings.keyboard.press('Escape');
+    await waitForVisibility(instance, 'settings.html', false);
     assert.equal(await visible('settings.html'), false); assert.equal(await visible('panel.html'), true); assert.equal(await petVisible(instance), true);
     await instance.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().find(win => win.webContents.getURL().endsWith('/pet.html')).close());
     assert.equal(await visible('panel.html'), false); assert.equal(await petVisible(instance), true);

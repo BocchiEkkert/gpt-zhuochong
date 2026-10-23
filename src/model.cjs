@@ -53,7 +53,10 @@ function validateSettings(input) {
         if (!Array.isArray(bank) || !bank.length || bank.length > 300 || bank.some(line => typeof line !== 'string' || !line.trim() || line.length > 120 || /[\u0000-\u001f]/.test(line))) fail('每类文案为 1–300 条，每条 1–120 字，不能包含换行或控制字符');
         count += bank.length;
       }
-      if (count > 1000) fail('自定义文案合计不能超过 1000 条');
+      for (const [category, bank] of Object.entries(require('../renderer/dialogue.js'))) {
+        if (Array.isArray(bank) && !Object.hasOwn(value, category)) count += bank.length;
+      }
+      if (count > 1000) fail('文案合计不能超过 1000 条（包括未替换的默认分类）');
     } else if (key === 'codexExecutable') {
       if (typeof value !== 'string' || value.length > 4096 || /[\u0000-\u001f]/.test(value)) fail('Codex 程序路径无效');
     } else if (key === 'position') {

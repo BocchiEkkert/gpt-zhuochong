@@ -103,8 +103,9 @@ else {
     clearTimeout(panelHideTimer);
     if (!pet.isVisible() || drag || (panelSuppressed && !pin)) return;
     panelPinned = pin || panelPinned; clearSpeech();
-    panelWindow.setBounds(rectangle(layout.popover)); panelWindow.showInactive();
-    if (pin) panelWindow.focus(); broadcast();
+    panelWindow.setBounds(rectangle(layout.popover));
+    if (pin) panelWindow.show(); else panelWindow.showInactive();
+    broadcast();
   }
   function schedulePanelHide() {
     clearTimeout(panelHideTimer);
@@ -258,9 +259,9 @@ else {
         if (!result.canceled && result.filePaths[0]) {
           const handle = await fs.promises.open(result.filePaths[0], 'r'); let text;
           try {
-            if ((await handle.stat()).size > 256 * 1024) throw new TypeError('文案文件不能超过 256 KB');
-            const buffer = Buffer.alloc(256 * 1024 + 1), { bytesRead } = await handle.read(buffer, 0, buffer.length, 0);
-            if (bytesRead > 256 * 1024) throw new TypeError('文案文件不能超过 256 KB');
+            if ((await handle.stat()).size > 1024 * 1024) throw new TypeError('文案文件不能超过 1 MB');
+            const buffer = Buffer.alloc(1024 * 1024 + 1), { bytesRead } = await handle.read(buffer, 0, buffer.length, 0);
+            if (bytesRead > 1024 * 1024) throw new TypeError('文案文件不能超过 1 MB');
             text = buffer.subarray(0, bytesRead).toString('utf8').replace(/^\uFEFF/, '');
           } finally { await handle.close(); }
           let banks;
